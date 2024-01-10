@@ -1,0 +1,102 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: An Example Vulnerable Lambda Function
+
+Resources:
+  ApiGateway:
+    Type: "AWS::ApiGateway::RestApi"
+    Properties:
+      Name: "ServerlessSecurity"
+      Description: "API Gateway for vulnerable enpoint"
+      BinaryMediaTypes:
+      - "multipart/form-data"
+
+  APIResource:
+    Type: "AWS::ApiGateway::Resource"
+    Properties:
+      ParentId: !GetAtt ApiGateway.RootResourceId
+      RestApiId: !Ref "ApiGateway"
+      PathPart: lambda
+  
+  APIMethod:
+    Type: "AWS::ApiGateway::Method"
+    Properties:
+      AuthorizationType: "NONE"
+      HttpMethod: "ANY"
+      Integration:
+        IntegrationHttpMethod: "POST"
+        Type: "AWS_PROXY"
+        Uri: !Sub
+          - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations"
+          - lambdaArn: !GetAtt "VulnerableLambda.Arn"
+      ResourceId: !Ref "APIResource"
+      RestApiId: !Ref "ApiGateway"
+
+  DeployAPI:
+    Type: "AWS::ApiGateway::Deployment"
+    DependsOn:
+      - "APIMethod"
+    Properties:
+      RestApiId: !Ref "ApiGateway"
+      StageName: "dev"
+
+  VulnerableLambda:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Description: "Vulnerable Lambda"
+      Runtime: python3.11
+      Handler: index.handler
+      Code:
+        S3Bucket: immersionday-workshops-trendmicro
+        S3Key: dundermifflen/lambda/Lambda.zip 
+      MemorySize: 512
+      Timeout: 15
+      Role: !GetAtt "VulnLambdaRole.Arn"
+
+  VulnerableLambdaPersmission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: "lambda:InvokeFunction"
+      FunctionName: !GetAtt "VulnerableLambda.Arn"
+      Principal: "apigateway.amazonaws.com"
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGateway}/*/ANY/lambda"
+
+  VulnLambdaRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Action: "sts:AssumeRole"
+          Effect: "Allow"
+          Principal:
+            Service: "lambda.amazonaws.com"
+      Policies:
+      - PolicyName: !Join ["-",[!Ref AWS::StackName, "vuln-lambda-policy"]]
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          - Effect: Allow
+            Action:
+            - "cloudwatch:PutMetricData"
+            Resource: "*"
+          - Effect: "Allow"
+            Action:
+            - "logs:CreateLogGroup"
+            - "logs:CreateLogStream"
+            - "logs:PutLogEvents"
+            - "iam:ListAttachedRolePolicies"
+            - "iam:AttachRolePolicy"
+            Resource: "*"
+  
+  APIURLParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /dunder/vulnerableapiurl
+      Description: Vulnerable API Endpoint for Lambda
+      Type: String
+      Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/dev/lambda"
+
+Outputs:
+  VulnAPIEndpointURL:
+    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/dev/lambda"
+    Description: Vulnerable API ENDPOINT

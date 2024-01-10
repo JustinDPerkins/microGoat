@@ -1,0 +1,116 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Root Template for Dunder Mifflen Infrastructure
+Parameters:
+  FrontendImage:
+    Description: Frontend ECR image URI
+    Type: String
+    Default: ""
+  
+  BackendImage:
+    Description: Backend ECR image URI
+    Type: String
+    Default: ""
+
+  TerminalImage:
+    Description: Terminal ECR image URI
+    Type: String
+    Default: ""
+  
+  LazyModeImage:
+    Description: LazyMode ECR image URI
+    Type: String
+    Default: ""
+  
+  OrdersImage:
+    Description: Orders ECR image URI
+    Type: String
+    Default: ""
+  
+  APIKey:
+    Description: Trend Micro Vision One API Key.
+    Type: String
+    NoEcho: true
+    Default: ""
+  
+  AmaasURL:
+    Description: Trend AMaaS Region URL
+    Type: String
+    Default: "antimalware.us-1.cloudone.trendmicro.com:443"
+  
+  MyIP:
+    Type: String
+    Description: Enter your local machine's IP address (CIDR format, e.g., 10.0.0.1/32)
+    AllowedPattern: "^(\\d{1,3}\\.){3}\\d{1,3}/\\d{1,2}$"  # CIDR format validation
+    ConstraintDescription: Must be a valid CIDR-formatted IP address (e.g., 10.0.0.1/32)
+  
+  LaunchType:
+    Description: Please provide the LaunchType
+    Type: String
+    Default: FARGATE
+    AllowedValues:
+            - EC2
+            - FARGATE
+
+  PublicIP:
+    Description: Please provide IP connectivity option
+    Type: String
+    Default: DISABLED
+    AllowedValues:
+            - ENABLED
+            - DISABLED
+
+Resources:
+  ServerlessStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://immersionday-workshops-trendmicro.s3.amazonaws.com/dundermifflen/templates/lambda.template.yaml
+  
+  WareHouseStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://immersionday-workshops-trendmicro.s3.amazonaws.com/dundermifflen/templates/s3.template.yaml
+
+  VPCNetworkStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://immersionday-workshops-trendmicro.s3.amazonaws.com/dundermifflen/templates/vpc.template.yaml
+
+  ECSStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://immersionday-workshops-trendmicro.s3.amazonaws.com/dundermifflen/templates/ecs.template.yaml
+      Parameters:
+        FrontendImage: !Ref FrontendImage
+        BackendImage: !Ref BackendImage
+        TerminalImage: !Ref TerminalImage
+        LazyModeImage: !Ref LazyModeImage
+        OrdersImage: !Ref OrdersImage
+        WareHouseBucket: !GetAtt WareHouseStack.Outputs.DunderMifflinBucket
+        VPC: !GetAtt VPCNetworkStack.Outputs.VpcId
+        PublicSubnetOne: !GetAtt VPCNetworkStack.Outputs.PublicSubnet1
+        PublicSubnetTwo: !GetAtt VPCNetworkStack.Outputs.PublicSubnet2
+        PrivateSubnetOne: !GetAtt VPCNetworkStack.Outputs.PrivateSubnet1
+        PrivateSubnetTwo: !GetAtt VPCNetworkStack.Outputs.PrivateSubnet2
+        APIKey: !Ref APIKey
+        AmaasURL: !Ref AmaasURL
+        APIGatewayURL: !GetAtt ServerlessStack.Outputs.VulnAPIEndpointURL
+        MyIP: !Ref MyIP
+        LaunchType: !Ref LaunchType
+        PublicIP: !Ref PublicIP
+        
+Outputs:
+  VulnerableAPIEndpoint:
+    Description: Vulnerable API ENDPOINT
+    Value: !GetAtt ServerlessStack.Outputs.VulnAPIEndpointURL
+  
+  VpcId:
+    Description: The VPC Id
+    Value: !GetAtt VPCNetworkStack.Outputs.VpcId
+
+  WebAppURL:
+    Description: URL of Load Balancer serving Frontend
+    Value: !GetAtt ECSStack.Outputs.LoadBalancerUrl
+  
+  WareHouseBucket:
+    Description: Dunder Mifflen Order Process Bucket
+    Value: !GetAtt WareHouseStack.Outputs.DunderMifflinBucket

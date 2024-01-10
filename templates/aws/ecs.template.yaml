@@ -1,0 +1,713 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Dunder Mifflen Cluster: ECS'
+
+Parameters:
+  MyIP:
+    Type: String
+    Description: Enter your local machine's IP address (CIDR format, e.g., 10.0.0.1/32)
+    AllowedPattern: "^(\\d{1,3}\\.){3}\\d{1,3}/\\d{1,2}$"  # CIDR format validation
+    ConstraintDescription: Must be a valid CIDR-formatted IP address (e.g., 10.0.0.1/32)
+
+  APIKey:
+    Description: Trend Micro Vision One API Key
+    Type: String
+    NoEcho: true
+    Default: ""
+  
+  WareHouseBucket:
+    Description: Dudner WareHouse Orders Bucket Name.
+    Type: String
+    Default: ""
+  
+  AmaasURL:
+    Description: Trend AMaaS Region URL
+    Type: String
+    Default: "antimalware.us-1.cloudone.trendmicro.com:443"
+
+  APIGatewayURL:
+    Description: ApiGateway URL for Lambda
+    Type: String
+    Default: ""
+  
+  FrontendImage:
+    Description: Frontend ECR image URI
+    Type: String
+    Default: ""
+  
+  BackendImage:
+    Description: Backend ECR image URI
+    Type: String
+    Default: ""
+
+  TerminalImage:
+    Description: Terminal ECR image URI
+    Type: String
+    Default: ""
+  
+  LazyModeImage:
+    Description: LazyMode ECR image URI
+    Type: String
+    Default: ""
+  
+  OrdersImage:
+    Description: Orders ECR image URI
+    Type: String
+    Default: ""
+
+  VPC:
+    Description: The VPC to deploy Cluster
+    Type: AWS::EC2::VPC::Id
+    Default: ""
+
+  PublicSubnetOne:
+    Type: AWS::EC2::Subnet::Id
+    Description: First Public Subnet
+    Default: ""
+
+  PublicSubnetTwo:
+    Type: AWS::EC2::Subnet::Id
+    Description: Second Public Subnet
+    Default: ""
+  
+  PrivateSubnetOne:
+    Type: AWS::EC2::Subnet::Id
+    Description: First Private Subnet
+    Default: ""
+
+  PrivateSubnetTwo:
+    Type: AWS::EC2::Subnet::Id
+    Description: Second Private Subnet
+    Default: ""
+
+  Domain:
+    Description: An arbitrary internal domain name for the application (only required for internal service discovery - default is dunder.local). It must be unique across multiple deploymemts.
+    Type: String
+    Default: "dunder.local"
+
+  CountOfUiTasks:
+    Description: The number of tasks to be instantiated for the UI service  
+    Type: Number
+    Default: 1
+
+  CountOfAppserverTasks:
+    Description: The number of tasks to be instantiated for the Application service  
+    Type: Number
+    Default: 1
+
+  LaunchType:
+    Description: Please provide the LaunchType
+    Type: String
+    Default: FARGATE
+    AllowedValues:
+            - EC2
+            - FARGATE
+
+  PublicIP:
+    Description: Please provide IP connectivity option
+    Type: String
+    Default: DISABLED
+    AllowedValues:
+            - ENABLED
+            - DISABLED
+
+  InstanceType:
+    Type: String
+    Default: t2.large
+    Description: Class of EC2 instance used to host containers. Choose t2 for testing, m5 for general purpose, c5 for CPU intensive services, and r5 for memory intensive services
+    AllowedValues: [ t2.micro, t2.small, t2.medium, t2.large, t2.xlarge, t2.2xlarge,
+     m5.large, m5.xlarge, m5.2large, m5.4xlarge, m5.12xlarge, m5.24large,
+     c5.large, c5.xlarge, c5.2xlarge, c5.4xlarge, c5.9xlarge, c5.18xlarge,
+     r5.large, r5.xlarge, r5.2xlarge, r5.4xlarge, r5.12xlarge, r5.24xlarge ]
+    ConstraintDescription: Please choose a valid instance type.
+  
+  ECSAMI:
+    Description: The Amazon Machine Image ID used for the cluster, leave it as the default value to get the latest AMI
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ecs/optimized-ami/amazon-linux/recommended/image_id
+
+Conditions:
+  IsEC2LaunchType: !Equals [!Ref LaunchType, "EC2"]
+           
+Resources:
+  DunderCluster:
+    Type: AWS::ECS::Cluster
+  
+  ECSTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: DunderOrdersECSPolicy
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "s3:GetObject"
+                  - "s3:PutObject"
+                Resource: 
+                  - !Sub "arn:aws:s3:::${WareHouseBucket}/*"
+                  - !Sub "arn:aws:s3:::${WareHouseBucket}"
+
+  LazyModeService: 
+    Type: AWS::ECS::Service
+    Properties: 
+        LaunchType: !If [IsEC2LaunchType, "EC2", !Ref LaunchType]
+        Cluster: !Ref DunderCluster
+        DesiredCount: !Ref CountOfAppserverTasks
+        ServiceRegistries:
+            - RegistryArn: !GetAtt LazyModeServiceDiscoveryEntry.Arn
+        TaskDefinition: !Ref LazyModeTaskDefinition
+        NetworkConfiguration:
+            AwsvpcConfiguration:
+                AssignPublicIp: !Ref PublicIP
+                Subnets: [ !Ref 'PrivateSubnetOne' , !Ref 'PrivateSubnetTwo' ]
+                SecurityGroups: [!Ref 'LazyModeSecurityGroup' ]
+
+  LazyModeTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+        Family: LazyModeTask
+        RequiresCompatibilities:
+            - !If [IsEC2LaunchType, "EC2", "FARGATE"]
+        NetworkMode: awsvpc
+        ExecutionRoleArn: !GetAtt ECSTaskExecutionRole.Arn
+        Cpu: 512
+        Memory: 1024
+        ContainerDefinitions:
+            - Name: LazyMode-container
+              PortMappings:
+                - ContainerPort: 4200
+              Essential: true
+              Image: !Ref LazyModeImage
+              Environment: 
+                - Name: SEARCH_DOMAIN
+                  Value: !Ref 'Domain' 
+                - Name: AGW_URL
+                  Value: !Ref 'APIGatewayURL'
+              LogConfiguration:
+                LogDriver: awslogs
+                Options:
+                    awslogs-group: !Ref AWS::StackName
+                    awslogs-region: !Ref AWS::Region
+                    awslogs-stream-prefix: "dunder"
+
+  BackendService: 
+    Type: AWS::ECS::Service
+    Properties: 
+        LaunchType: !If [IsEC2LaunchType, "EC2", !Ref LaunchType]
+        Cluster: !Ref DunderCluster
+        DesiredCount: !Ref CountOfAppserverTasks
+        ServiceRegistries:
+            - RegistryArn: !GetAtt BackendServiceDiscoveryEntry.Arn
+        TaskDefinition: !Ref BackendTaskDefinition
+        NetworkConfiguration:
+            AwsvpcConfiguration:
+                AssignPublicIp: !Ref PublicIP
+                Subnets: [ !Ref 'PrivateSubnetOne' , !Ref 'PrivateSubnetTwo' ]
+                SecurityGroups: [!Ref 'BackendSecurityGroup' ]
+
+  BackendTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+        Family: BackendTask
+        RequiresCompatibilities:
+            - !If [IsEC2LaunchType, "EC2", "FARGATE"]
+        NetworkMode: awsvpc
+        ExecutionRoleArn: !GetAtt ECSTaskExecutionRole.Arn
+        TaskRoleArn: !GetAtt ECSTaskRole.Arn
+        Cpu: 512
+        Memory: 1024
+        ContainerDefinitions:
+            - Name: backend-container
+              PortMappings:
+                - ContainerPort: 4567
+              Essential: true
+              Image: !Ref BackendImage
+              Environment: 
+                - Name: SEARCH_DOMAIN
+                  Value: !Ref 'Domain'
+                - Name: s3_object_url
+                  Value: !Sub "https://${WareHouseBucket}.s3.amazonaws.com/downloads/DUNDER_PROPOSAL_REQUEST_FORM.pdf"
+                - Name: s3_bucket_name
+                  Value: !Ref WareHouseBucket
+                - Name: AGW_URL
+                  Value: !Ref 'APIGatewayURL'
+                - Name: V1_API_KEY
+                  Value: !Ref 'APIKey'
+                - Name: C1_ADDRESS
+                  Value: !Ref AmaasURL
+                - Name: C1_REGION
+                  Value: "us-1"
+                - Name: LOAD_BALANCER_URL
+                  Value: !GetAtt LoadBalancer.DNSName
+              LogConfiguration:
+                LogDriver: awslogs
+                Options:
+                    awslogs-group: !Ref AWS::StackName
+                    awslogs-region: !Ref AWS::Region
+                    awslogs-stream-prefix: "dunder"
+
+  TerminalService: 
+    Type: AWS::ECS::Service
+    Properties: 
+        LaunchType: !If [IsEC2LaunchType, "EC2", !Ref LaunchType]
+        Cluster: !Ref DunderCluster
+        DesiredCount: !Ref CountOfAppserverTasks
+        ServiceRegistries:
+            - RegistryArn: !GetAtt TerminalServiceDiscoveryEntry.Arn
+        TaskDefinition: !Ref TerminalTaskDefinition
+        NetworkConfiguration:
+            AwsvpcConfiguration:
+                AssignPublicIp: !Ref PublicIP
+                Subnets: [ !Ref 'PrivateSubnetOne' , !Ref 'PrivateSubnetTwo' ]
+                SecurityGroups: [!Ref 'TerminalSecurityGroup' ]
+
+  TerminalTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+        Family: TerminalTask
+        RequiresCompatibilities:
+            - !If [IsEC2LaunchType, "EC2", "FARGATE"]
+        NetworkMode: awsvpc
+        ExecutionRoleArn: !GetAtt ECSTaskExecutionRole.Arn
+        TaskRoleArn: !GetAtt ECSTaskRole.Arn
+        Cpu: 512
+        Memory: 1024
+        ContainerDefinitions:
+            - Name: terminal-container
+              Essential: true
+              PortMappings:
+                - ContainerPort: 8081
+              Image: !Ref TerminalImage
+              Environment: 
+                - Name: SEARCH_DOMAIN
+                  Value: !Ref 'Domain' 
+              LogConfiguration:
+                LogDriver: awslogs
+                Options:
+                    awslogs-group: !Ref AWS::StackName
+                    awslogs-region: !Ref AWS::Region
+                    awslogs-stream-prefix: "dunder"
+  
+  OrdersService: 
+    Type: AWS::ECS::Service
+    Properties: 
+        LaunchType: !If [IsEC2LaunchType, "EC2", !Ref LaunchType]
+        Cluster: !Ref DunderCluster
+        DesiredCount: !Ref CountOfAppserverTasks
+        ServiceRegistries:
+            - RegistryArn: !GetAtt OrdersServiceDiscoveryEntry.Arn
+        TaskDefinition: !Ref OrdersTaskDefinition
+        NetworkConfiguration:
+            AwsvpcConfiguration:
+                AssignPublicIp: !Ref PublicIP
+                Subnets: [ !Ref 'PrivateSubnetOne' , !Ref 'PrivateSubnetTwo' ]
+                SecurityGroups: [!Ref 'OrdersSecurityGroup' ]
+
+  OrdersTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+        Family: OrdersTask
+        RequiresCompatibilities:
+            - !If [IsEC2LaunchType, "EC2", "FARGATE"]
+        NetworkMode: awsvpc
+        ExecutionRoleArn: !GetAtt ECSTaskExecutionRole.Arn
+        TaskRoleArn: !GetAtt ECSTaskRole.Arn
+        Cpu: 512
+        Memory: 1024
+        ContainerDefinitions:
+            - Name: orders-container
+              PortMappings:
+                - ContainerPort: 5000
+              Essential: true
+              Image: !Ref OrdersImage
+              Environment: 
+                - Name: SEARCH_DOMAIN
+                  Value: !Ref 'Domain'
+                - Name: V1_API_KEY
+                  Value: !Ref 'APIKey'
+                - Name: s3_object_url
+                  Value: !Sub "https://${WareHouseBucket}.s3.amazonaws.com/downloads/DUNDER_PROPOSAL_REQUEST_FORM.pdf"
+                - Name: s3_bucket_name
+                  Value: !Ref WareHouseBucket
+              LogConfiguration:
+                LogDriver: awslogs
+                Options:
+                    awslogs-group: !Ref AWS::StackName
+                    awslogs-region: !Ref AWS::Region
+                    awslogs-stream-prefix: "dunder"
+
+  FrontendService: 
+    Type: AWS::ECS::Service
+    DependsOn: LoadBalancerListener
+    Properties: 
+        LaunchType: !If [IsEC2LaunchType, "EC2", !Ref LaunchType]
+        Cluster: !Ref DunderCluster
+        DesiredCount: !Ref CountOfUiTasks
+        ServiceRegistries:
+            - RegistryArn: !GetAtt FrontendServiceDiscoveryEntry.Arn
+        TaskDefinition: !Ref FrontendTaskDefinition
+        LoadBalancers:
+            - ContainerName: frontend-container
+              ContainerPort: 80
+              TargetGroupArn: !Ref ELBTargetGroup
+        NetworkConfiguration:
+            AwsvpcConfiguration:
+                AssignPublicIp: !Ref PublicIP
+                Subnets: [ !Ref 'PrivateSubnetOne' , !Ref 'PrivateSubnetTwo' ]
+                SecurityGroups: [!Ref 'FrontendSecurityGroup' ]
+
+  FrontendTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+        Family: FrontendTask
+        RequiresCompatibilities:
+            - !If [IsEC2LaunchType, "EC2", "FARGATE"]
+        NetworkMode: awsvpc
+        ExecutionRoleArn: !GetAtt ECSTaskExecutionRole.Arn
+        Cpu: 512
+        Memory: 1024
+        ContainerDefinitions:
+            - Name: frontend-container
+              Essential: true
+              Image: !Ref FrontendImage
+              Environment: 
+                - Name: SEARCH_DOMAIN
+                  Value: !Ref 'Domain'
+              PortMappings:
+                - ContainerPort: 80
+              LogConfiguration:
+                LogDriver: awslogs
+                Options:
+                    awslogs-group: !Ref AWS::StackName
+                    awslogs-region: !Ref AWS::Region
+                    awslogs-stream-prefix: "dunder"
+
+  CloudWatchLogsGroup:
+    Type: AWS::Logs::LogGroup
+    Properties: 
+        LogGroupName: !Ref AWS::StackName
+        RetentionInDays: 365  
+  
+  # This is a role which is used by the ECS tasks themselves.
+  ECSTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+        AssumeRolePolicyDocument:
+            Statement:
+            - Effect: Allow
+              Principal:
+                  Service: [ecs-tasks.amazonaws.com]
+              Action: ['sts:AssumeRole']
+        Path: /
+        Policies:
+            - PolicyName: AmazonECSTaskExecutionRolePolicy
+              PolicyDocument:
+                Statement:
+                    - Effect: Allow
+                      Action:
+                        # Allow the ECS Tasks to download images from ECR
+                        - 'ecr:GetAuthorizationToken'
+                        - 'ecr:BatchCheckLayerAvailability'
+                        - 'ecr:GetDownloadUrlForLayer'
+                        - 'ecr:BatchGetImage'
+                        # Allow the EC2 Tasks to download images from ECR
+                        - 'ec2:AttachNetworkInterface'
+                        - 'ec2:CreateNetworkInterface'
+                        - 'ec2:CreateNetworkInterfacePermission'
+                        - 'ec2:DeleteNetworkInterface'
+                        - 'ec2:DeleteNetworkInterfacePermission'
+                        - 'ec2:Describe*'
+                        - 'ec2:DetachNetworkInterface'
+
+                        # Allow the ECS tasks to upload logs to CloudWatch
+                        - 'logs:CreateLogStream'
+                        - 'logs:PutLogEvents'
+
+                        # Allow the ECS tasks to register into the target group
+                        - 'elasticloadbalancing:DeregisterInstancesFromLoadBalancer'
+                        - 'elasticloadbalancing:Describe*'
+                        - 'elasticloadbalancing:RegisterInstancesWithLoadBalancer'
+                        - 'elasticloadbalancing:DeregisterTargets'
+                        - 'elasticloadbalancing:DescribeTargetGroups'
+                        - 'elasticloadbalancing:DescribeTargetHealth'
+                        - 'elasticloadbalancing:RegisterTargets'
+                      Resource: '*'
+
+  ServiceDiscoveryNameSpace:
+    Type: AWS::ServiceDiscovery::PrivateDnsNamespace
+    Properties:
+        Description: "Service Discovery Namespace"
+        Vpc: !Ref 'VPC'
+        Name: !Ref 'Domain'
+
+  LazyModeServiceDiscoveryEntry:
+    Type: AWS::ServiceDiscovery::Service
+    Properties:
+        Name: lazymode
+        DnsConfig:
+            DnsRecords: 
+                - Type: A
+                  TTL: "10"
+            NamespaceId: !Ref 'ServiceDiscoveryNameSpace'
+        HealthCheckCustomConfig:
+            FailureThreshold: '1'
+  
+  OrdersServiceDiscoveryEntry:
+    Type: AWS::ServiceDiscovery::Service
+    Properties:
+        Name: orders
+        DnsConfig:
+            DnsRecords: 
+                - Type: A
+                  TTL: "10"
+            NamespaceId: !Ref 'ServiceDiscoveryNameSpace'
+        HealthCheckCustomConfig:
+            FailureThreshold: '1'
+
+  BackendServiceDiscoveryEntry:
+    Type: AWS::ServiceDiscovery::Service
+    Properties:
+        Name: backend
+        DnsConfig:
+            DnsRecords: 
+                - Type: A
+                  TTL: "10"
+            NamespaceId: !Ref 'ServiceDiscoveryNameSpace'
+        HealthCheckCustomConfig:
+            FailureThreshold: '1'
+  
+  TerminalServiceDiscoveryEntry:
+    Type: AWS::ServiceDiscovery::Service
+    Properties:
+        Name: terminal
+        DnsConfig:
+            DnsRecords: 
+                - Type: A
+                  TTL: "10"
+            NamespaceId: !Ref 'ServiceDiscoveryNameSpace'
+        HealthCheckCustomConfig:
+            FailureThreshold: '1'
+
+  FrontendServiceDiscoveryEntry:
+    Type: AWS::ServiceDiscovery::Service
+    Properties:
+        Name: frontend
+        DnsConfig:
+            DnsRecords: 
+                - Type: A
+                  TTL: "10"
+            NamespaceId: !Ref 'ServiceDiscoveryNameSpace'
+        HealthCheckCustomConfig:
+            FailureThreshold: '1'
+
+  LazyModeSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+        GroupDescription: lazymode security group
+        SecurityGroupIngress:
+        - SourceSecurityGroupId: !GetAtt BackendSecurityGroup.GroupId
+          IpProtocol: tcp
+          ToPort: 4200
+          FromPort: 4200
+        VpcId: !Ref 'VPC'
+  
+  OrdersSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+        GroupDescription: orders security group
+        SecurityGroupIngress:
+        - SourceSecurityGroupId: !GetAtt BackendSecurityGroup.GroupId
+          IpProtocol: tcp
+          ToPort: 5000
+          FromPort: 5000
+        VpcId: !Ref 'VPC'
+  
+  BackendSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+        GroupDescription: backend security group
+        SecurityGroupIngress:
+        - SourceSecurityGroupId: !GetAtt FrontendSecurityGroup.GroupId
+          IpProtocol: tcp
+          ToPort: 4567
+          FromPort: 4567
+        VpcId: !Ref 'VPC'
+
+  TerminalSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+        GroupDescription: terminal security group
+        SecurityGroupIngress:
+        - SourceSecurityGroupId: !GetAtt BackendSecurityGroup.GroupId
+          IpProtocol: tcp
+          ToPort: 8081
+          FromPort: 8081
+        VpcId: !Ref 'VPC'
+
+  FrontendSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+        GroupDescription: frontend security group
+        SecurityGroupIngress:
+        - SourceSecurityGroupId: !GetAtt ELBSecurityGroup.GroupId
+          IpProtocol: tcp
+          ToPort: 80
+          FromPort: 80
+        VpcId: !Ref 'VPC'
+
+  ELBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+        GroupDescription: load balancer security group
+        SecurityGroupIngress:
+        - CidrIp: !Ref 'MyIP'
+          IpProtocol: tcp
+          ToPort: 80
+          FromPort: 80
+        VpcId: !Ref 'VPC'
+
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Scheme: internet-facing
+      Subnets: [ !Ref 'PublicSubnetOne' , !Ref 'PublicSubnetTwo' ]
+      SecurityGroups: [ !Ref ELBSecurityGroup ]
+
+  # Autoscaling group. This launches the actual EC2 instances that will register
+  # themselves as members of the cluster, and run the docker containers.
+  ECSAutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Condition: IsEC2LaunchType
+    Properties:
+      VPCZoneIdentifier:
+        - !Ref PrivateSubnetOne
+        - !Ref PrivateSubnetTwo
+      LaunchConfigurationName: !Ref 'ContainerInstances'
+      MinSize: '1'
+      MaxSize: '4'
+      DesiredCapacity: '3'
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT15M
+    UpdatePolicy:
+      AutoScalingReplacingUpdate:
+        WillReplace: 'false'
+  
+  ContainerInstances:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Condition: IsEC2LaunchType
+    Properties:
+      ImageId: !Ref 'ECSAMI'
+      SecurityGroups: [!Ref 'FrontendSecurityGroup', !Ref TerminalSecurityGroup, !Ref OrdersSecurityGroup, !Ref BackendSecurityGroup, !Ref LazyModeSecurityGroup]
+      InstanceType: !Ref 'InstanceType'
+      IamInstanceProfile: !Ref 'EC2InstanceProfile'
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          echo ECS_CLUSTER=${DunderCluster} >> /etc/ecs/ecs.config
+          yum install -y aws-cfn-bootstrap
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource ECSAutoScalingGroup --region ${AWS::Region}
+  
+  EC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Condition: IsEC2LaunchType
+    Properties:
+      Path: /
+      Roles: [!Ref 'EC2Role']
+
+  # A role used to allow AWS Autoscaling to inspect stats and adjust scaleable targets
+  # on your AWS account
+  AutoscalingRole:
+    Type: AWS::IAM::Role
+    Condition: IsEC2LaunchType
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: [application-autoscaling.amazonaws.com]
+          Action: ['sts:AssumeRole']
+      Path: /
+      Policies:
+      - PolicyName: service-autoscaling
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action:
+              - 'application-autoscaling:*'
+              - 'cloudwatch:DescribeAlarms'
+              - 'cloudwatch:PutMetricAlarm'
+              - 'ecs:DescribeServices'
+              - 'ecs:UpdateService'
+            Resource: '*'
+
+  # Role for the EC2 hosts. This allows the ECS agent on the EC2 hosts
+  # to communciate with the ECS control plane, as well as download the docker
+  # images from ECR to run on your host.
+  EC2Role:
+    Type: AWS::IAM::Role
+    Condition: IsEC2LaunchType
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: [ec2.amazonaws.com]
+          Action: ['sts:AssumeRole']
+      Path: /
+      Policies:
+      - PolicyName: ecs-service
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action:
+              - 'ecs:CreateCluster'
+              - 'ecs:DeregisterContainerInstance'
+              - 'ecs:DiscoverPollEndpoint'
+              - 'ecs:Poll'
+              - 'ecs:RegisterContainerInstance'
+              - 'ecs:StartTelemetrySession'
+              - 'ecs:Submit*'
+              - 'logs:CreateLogStream'
+              - 'logs:PutLogEvents'
+              - 'ecr:GetAuthorizationToken'
+              - 'ecr:BatchGetImage'
+              - 'ecr:GetDownloadUrlForLayer'
+              - 'ssm:*'
+            Resource: '*'
+
+  LoadBalancerListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref ELBTargetGroup
+
+  ELBTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 6
+      HealthCheckPath: /
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      TargetType: ip 
+      VpcId: !Ref VPC
+      Port: 80
+      Protocol: HTTP
+
+Outputs:
+
+  LoadBalancerUrl:
+    Description: The URL of the ALB
+    Value: !GetAtt LoadBalancer.DNSName
