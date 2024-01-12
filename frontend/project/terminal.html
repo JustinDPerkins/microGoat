@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web-based Terminal</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: black;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+
+        #terminal {
+            position: relative;
+            z-index: 2;
+            margin: 20px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            border: 1px solid #0f0;
+        }
+
+        #commandInput {
+            width: 100%;
+            color: white;
+            background: black;
+            border: 1px solid #0f0;
+            padding: 10px;
+            box-sizing: border-box;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        #executeButton {
+            background: #0f0;
+            border: none;
+            padding: 10px;
+            color: black;
+            cursor: pointer;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        #output {
+            white-space: pre-wrap;
+            color: white;
+            font-family: 'Courier New', Courier, monospace;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="matrix"></canvas>
+
+    <div id="terminal">
+        <h1>Web-based Terminal</h1>
+        <textarea id="commandInput" rows="4" placeholder="Enter your commands here"></textarea>
+        <br>
+        <button id="executeButton">Execute</button>
+        <h2>Output:</h2>
+        <pre id="output"></pre>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const symbols = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+        const font_size = 10;
+        const columns = canvas.width / font_size;
+        const drops = [];
+
+        for (let x = 0; x < columns; x++) {
+            drops[x] = 1;
+        }
+
+        function drawMatrix() {
+            ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = "#0F0";
+            ctx.font = font_size + "px arial";
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = symbols.charAt(Math.floor(Math.random() * symbols.length));
+                ctx.fillText(text, i * font_size, drops[i] * font_size);
+
+                if (drops[i] * font_size > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+
+                drops[i]++;
+            }
+        }
+
+        setInterval(drawMatrix, 30);
+
+        function setupWebSocket(websocketURL, isLocal) {
+            // Determine the correct WebSocket endpoint
+            const wsEndpoint = isLocal ? `ws://${websocketURL}/terminal` : `ws://${websocketURL}/api/terminal`;
+    
+            const terminalWebSocket = new WebSocket(wsEndpoint);
+    
+            terminalWebSocket.onopen = function(event) {
+                console.log("Connected to terminal backend");
+            };
+    
+            terminalWebSocket.onmessage = function(event) {
+                const output = document.getElementById('output');
+                output.textContent += `\n$ ${event.data}`;
+            };
+    
+            terminalWebSocket.onerror = function(event) {
+                console.error("WebSocket error:", event);
+            };
+    
+            terminalWebSocket.onclose = function(event) {
+                console.log("Disconnected from terminal backend");
+            };
+    
+            document.getElementById('executeButton').addEventListener('click', function() {
+                const commandInput = document.getElementById('commandInput');
+                const command = commandInput.value;
+                if (terminalWebSocket.readyState === WebSocket.OPEN) {
+                    terminalWebSocket.send(command);
+                    document.getElementById('matrix').style.backgroundColor = 'red';
+                    setTimeout(() => {
+                        document.getElementById('matrix').style.backgroundColor = '';
+                    }, 10000);
+                } else {
+                    console.error("WebSocket is not open. Current state:", terminalWebSocket.readyState);
+                }
+                commandInput.value = '';
+            });
+        }
+    
+        fetch('/api/config')
+            .then(response => response.json())
+            .then(config => {
+                // Check if running locally or on the deployed environment
+                const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                const websocketURL = config && config.loadBalancerUrl ? config.loadBalancerUrl : 'localhost:8081';
+                setupWebSocket(websocketURL, isLocal);
+            })
+            .catch(error => {
+                console.error("Error fetching configuration:", error);
+                const isLocal = true;
+                setupWebSocket('localhost:8081', isLocal);
+            });
+    </script>
+</body>
+</html>
+

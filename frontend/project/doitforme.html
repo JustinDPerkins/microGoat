@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attack Path Selector</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: black;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+
+        #terminal {
+            position: relative;
+            z-index: 2;
+            margin: 20px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            border: 1px solid #0f0;
+        }
+
+        #commandInput {
+            width: 100%;
+            color: white;
+            background: black;
+            border: 1px solid #0f0;
+            padding: 10px;
+            box-sizing: border-box;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .actionButton {
+            background: #0f0;
+            border: none;
+            padding: 10px;
+            margin: 10px;
+            color: black;
+            cursor: pointer;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        #output {
+            white-space: pre-wrap;
+            color: white;
+            font-family: 'Courier New', Courier, monospace;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="matrix"></canvas>
+
+    <div id="terminal">
+        <h1>Attack Path Selector</h1>
+        <button class="actionButton" id="serverlessAttack">Serverless Attack Path</button>
+        <button class="actionButton" id="containerAttack">Container Attack Path</button>
+
+        <h2>Output:</h2>
+        <pre id="output"></pre>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const symbols = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+        const font_size = 10;
+        const columns = canvas.width / font_size;
+        const drops = [];
+
+        for (let x = 0; x < columns; x++) {
+            drops[x] = 1;
+        }
+
+        function drawMatrix() {
+            ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = "#0F0";
+            ctx.font = font_size + "px arial";
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = symbols.charAt(Math.floor(Math.random() * symbols.length));
+                ctx.fillText(text, i * font_size, drops[i] * font_size);
+
+                if (drops[i] * font_size > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+
+                drops[i]++;
+            }
+        }
+
+        setInterval(drawMatrix, 30);
+
+        // Function to handle the button click event
+    function handleServerlessAttackButtonClick() {
+        // Make an HTTP request to the GO backend container
+        fetch('/api/serverlesspath', {
+            method: 'GET', // You can change the method to POST or other as needed
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.text();
+            } else {
+                throw new Error('Failed to fetch data from the server.');
+            }
+        })
+        .then(data => {
+            // Display the response in the "output" element
+            document.getElementById('output').textContent = data;
+        })
+        .catch(error => {
+            console.error(error);
+        });
+    }
+
+    // Add a click event listener to the button
+    document.getElementById('serverlessAttack').addEventListener('click', handleServerlessAttackButtonClick);
+
+    </script>
+</body>
+
+</html>

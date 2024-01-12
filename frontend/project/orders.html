@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en" data-bs-theme="auto">
+  <head><script src="assets/js/color-modes.js"></script>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors">
+    <meta name="generator" content="Hugo 0.118.2">
+    <title>Dunder Mifflin</title>
+
+    <link rel="shortcut icon" href="images/favicon_io/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="images/favicon_io/apple-touch-icon.png">
+    <link rel="icon" type="image/x-icon" sizes="32x32" href="images/favicon_io/favicon-32x32.png">
+    <link rel="icon" type="image/x-icon" sizes="16x16" href="images/favicon_io/favicon-16x16.png">
+    <link rel="manifest" href="images/favicon_io/site.webmanifest">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@docsearch/css@3">
+    <link href="assets/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="assets/js/login.js"></script>
+
+    <style>
+      .bd-placeholder-img {
+        font-size: 1.125rem;
+        text-anchor: middle;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        user-select: none;
+      }
+
+      @media (min-width: 768px) {
+        .bd-placeholder-img-lg {
+          font-size: 3.5rem;
+        }
+      }
+
+      .b-example-divider {
+        width: 100%;
+        height: 3rem;
+        background-color: rgba(0, 0, 0, .1);
+        border: solid rgba(0, 0, 0, .15);
+        border-width: 1px 0;
+        box-shadow: inset 0 .5em 1.5em rgba(0, 0, 0, .1), inset 0 .125em .5em rgba(0, 0, 0, .15);
+      }
+
+      .b-example-vr {
+        flex-shrink: 0;
+        width: 1.5rem;
+        height: 100vh;
+      }
+
+      .bi {
+        vertical-align: -.125em;
+        fill: currentColor;
+      }
+
+      .nav-scroller {
+        position: relative;
+        z-index: 2;
+        height: 2.75rem;
+        overflow-y: hidden;
+      }
+
+      .nav-scroller .nav {
+        display: flex;
+        flex-wrap: nowrap;
+        padding-bottom: 1rem;
+        margin-top: -1px;
+        overflow-x: auto;
+        text-align: center;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .btn-bd-primary {
+        --bd-violet-bg: #712cf9;
+        --bd-violet-rgb: 112.520718, 44.062154, 249.437846;
+
+        --bs-btn-font-weight: 600;
+        --bs-btn-color: var(--bs-white);
+        --bs-btn-bg: var(--bd-violet-bg);
+        --bs-btn-border-color: var(--bd-violet-bg);
+        --bs-btn-hover-color: var(--bs-white);
+        --bs-btn-hover-bg: #6528e0;
+        --bs-btn-hover-border-color: #6528e0;
+        --bs-btn-focus-shadow-rgb: var(--bd-violet-rgb);
+        --bs-btn-active-color: var(--bs-btn-hover-color);
+        --bs-btn-active-bg: #5a23c8;
+        --bs-btn-active-border-color: #5a23c8;
+      }
+    </style>
+
+    <link href="assets/dist/css/carousel.css" rel="stylesheet">
+  </head>
+  <body>
+    <svg xmlns="http://www.w3.org/2000/svg" class="d-none">
+      <symbol id="check2" viewBox="0 0 16 16">
+        <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
+      </symbol>
+      <symbol id="circle-half" viewBox="0 0 16 16">
+        <path d="M8 15A7 7 0 1 0 8 1v14zm0 1A8 8 0 1 1 8 0a8 8 0 0 1 0 16z"/>
+      </symbol>
+      <symbol id="moon-stars-fill" viewBox="0 0 16 16">
+        <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/>
+        <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.734 1.734 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.734 1.734 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.734 1.734 0 0 0 1.097-1.097l.387-1.162zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.156 1.156 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.156 1.156 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732L13.863.1z"/>
+      </symbol>
+      <symbol id="sun-fill" viewBox="0 0 16 16">
+        <path d="M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"/>
+      </symbol>
+    </svg>
+
+
+<nav class="navbar navbar-expand-md bg-dark sticky-top border-bottom" data-bs-theme="dark">
+  <div class="container">
+    <a class="navbar-brand d-md-none" href="#">
+      <img src="images/Dunder_Mifflin_Inc.png" alt="Dunder Mifflin, Inc" style="max-width: 40%;">
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvas" aria-controls="#offcanvas" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="#offcanvas" aria-labelledby="#offcanvasLabel">
+      <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="#offcanvasLabel">Aperture</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+      </div>
+      <div class="offcanvas-body">
+        <ul class="navbar-nav flex-grow-1 justify-content-between">
+          <li class="nav-item"><a class="nav-link" href="#">
+            <img src="images/Dunder_Mifflin_Inc.png" alt="Dunder Mifflin, Inc" style="max-width: 40%;">
+          </a></li>
+          <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="products.html">Products</a></li>
+          <li class="nav-item"><a class="nav-link" href="orders.html">Orders</a></li>
+          <li class="nav-item"><a class="nav-link" href="wishlist.html">Wishlist</a></li>
+          <li class="nav-item">
+            <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#loginModal">Login</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="loginModalLabel">Login</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="background: #212529;">
+                <form id="loginForm">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username:</label>
+                        <input type="text" id="username" name="username" class="form-control" style="background: #212529;">
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password:</label>
+                        <input type="password" id="password" name="password" class="form-control" style="background: #212529;">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="submitLoginForm()">Login</button>
+            </div>
+        </div>
+    </div>
+  </div>
+
+<main style="background: #212529;">
+    <div class="container">
+        <div class="py-5 text-center">
+            <h2>Orders</h2>
+            <img class="d-block mx-auto mb-4" src="images/dm_files.png" alt="Dunder Mifflin File" width="295.8" height="217.6">
+            <p class="lead">Download, fill, and upload our forms for a personalized commercial proposal – it's as easy as a Dundie Award win at Dunder Mifflin!</p>
+        </div>
+        <hr class="my-4">
+        <div class="row g-5">
+          <div class="col-md-4">
+              <h4 class="d-flex justify-content-between align-items-center mb-3">
+                  <span class="text-secondary">Download Form</span>
+              </h4>
+              <div class="row g-5">
+                  <div class="col-md-12">
+                      <div class="pdf-preview-container" style="width: 300px; height: 400px; margin-bottom: 20px; display: none;">
+                        <iframe id="s3FileLink" src="#" style="width: 100%; height: 100%; margin-bottom: 20px;"></iframe>
+                      </div>
+                  </div>
+              </div>
+          </div>
+          <div class="col-md-8">
+              <h4 class="d-flex justify-content-between align-items-center mb-3">
+                  <span class="text-secondary">Upload Filled Form</span>
+              </h4>
+              <div class="row g-5">
+                  <form class="mb-3" id="upload-form" enctype="multipart/form-data">
+                      <div class="mb-3">
+                          <label for="file" class="form-label">Upload File:</label>
+                          <input type="file" name="file" id="file" class="form-control">
+                      </div>
+                      <button type="submit" class="btn btn-primary">Upload</button>
+                  </form>
+              </div>
+              <div class="row g-5" id="result" style="display: none;">
+                  <h4 class="d-flex justify-content-between align-items-center mb-3">
+                      <span class="text-secondary">Scan Results</span>
+                  </h4>
+                  {% if scan_result_code == 1 %}
+                      <p class="text-danger">File contains malware. Uploading is not allowed.</p>
+                  {% elif scan_result_code == 0 %}
+                      <!-- Only display if malware is not found -->
+                      <p class="text-success">File scanned successfully and is safe.</p>
+                  {% else %}
+                      <p>Scan result not available.</p>
+                  {% endif %}
+                  <!-- Display malware found if available -->
+                  {% if scan_result_code == 1 and scan_results.foundMalwares %}
+                      <h2>Malware Found:</h2>
+                      <ul>
+                          <li><p>Filename: {{ scan_results.fileName }}</p></li>
+                          {% for malware in scan_results.foundMalwares %}
+                              <li><p>Malware: {{ malware.malwareName }}</p></li>
+                          {% endfor %}
+                      </ul>
+                  {% endif %}
+            </div>
+          </div>
+      </div>      
+    </div>
+  </main>
+
+<footer class="container py-5">
+  <div class="row">
+    <div class="col-12 col-md">
+      <img src="images/Dunder_Mifflin_Inc.png" alt="Dunder Mifflin, Inc" style="max-width: 100%;">
+      <small class="d-block mb-3 text-body-secondary">&copy; 2005–2023</small>
+      <small class="d-block mb-3 text-body-secondary">Developed by Phyllis' nephew</small>
+    </div>
+    <div class="col-6 col-md">
+      <h5>Features</h5>
+      <ul class="list-unstyled text-small">
+        <li><a class="link-secondary text-decoration-none" href="#">Cool stuff</a></li>
+        <li><a class="link-secondary text-decoration-none" href="#">Random feature</a></li>
+        <li><a class="link-secondary text-decoration-none" href="#">Team feature</a></li>
+        <li><a class="link-secondary text-decoration-none" href="#">Stuff for developers</a></li>
+        <li><a class="link-secondary text-decoration-none" href="#">Another one</a></li>
+        <li><a class="link-secondary text-decoration-none" href="#">Last time</a></li>
+      </ul>
+    </div>
+    <div class="col-6 col-md">
+      <h5>Resources</h5>
+      <ul class="list-unstyled text-small">
+        <li><a class="link-secondary text-decoration-none" href="#">Resource name</a></li>
+        <li><a class="link-secondary text-decoration-none" href="#">Resource</a></li>
+        <li><a class="link-secondary text-decoration-none" href="#">Another resource</a></li>
+        <li><a class="link-secondary text-decoration-none" href="#">Final resource</a></li>
+      </ul>
+    </div>
+    <div class="col-6 col-md">
+      <h5>Resources</h5>
+      <ul class="list-unstyled text-small">
+        <li><a class="link-secondary text-decoration-none" href="#">Business</a></li>
+        <li><a class="link-secondary text-decoration-none" href="#">Education</a></li>
+        <li><a class="link-secondary text-decoration-none" href="#">Government</a></li>
+        <li><a class="link-secondary text-decoration-none" href="#">Gaming</a></li>
+      </ul>
+    </div>
+    <div class="col-6 col-md">
+      <h5>About</h5>
+      <ul class="list-unstyled text-small">
+        <li><a class="link-secondary text-decoration-none" href="#">Team</a></li>
+        <li><a class="link-secondary text-decoration-none" href="#">Locations</a></li>
+        <li><a class="link-secondary text-decoration-none" href="#">Privacy</a></li>
+        <li><a class="link-secondary text-decoration-none" href="#">Terms</a></li>
+      </ul>
+    </div>
+  </div>
+</footer>
+<script src="assets/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    var currentPage = window.location.href;
+    var navLinks = document.querySelectorAll('.nav-link');
+    for (var i = 0; i < navLinks.length; i++) {
+        if (navLinks[i].href === currentPage && navLinks[i].href != "#") {
+            navLinks[i].parentNode.classList.add('active');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+
+        getS3Url();
+
+        document.getElementById('upload-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            var fileInput = document.getElementById('file');
+
+            if (fileInput.files.length === 0) {
+                alert('Please select a file before uploading.');
+                return;
+            }
+
+            var formData = new FormData(this);
+            var xhr = new XMLHttpRequest();
+
+            xhr.open('POST', '/api/orders', true);
+            xhr.onload = function() {
+              if (xhr.status === 200 || xhr.status === 500) {
+                var response = JSON.parse(xhr.responseText);
+                updateResultHTML(response);
+              } else {
+                  console.error("Error with status code:", xhr.status, xhr.responseText);
+    }
+};
+
+            xhr.send(formData);
+        });
+    });
+
+
+    function getS3Url(){
+        fetch('/api/get-s3', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data) {
+                document.getElementById("s3FileLink").src = data.s3_url;
+                document.querySelector(".pdf-preview-container").style.display = 'block';
+            } else {
+                console.error('Failed to get S3 URL.');
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching S3 URL:', error);
+        });
+    }
+
+
+    function updateResultHTML(scanReturn) {
+        var resultDiv = document.getElementById('result');
+        resultDiv.innerHTML = ''; // Clear the existing content
+        document.getElementById('result').style.display = 'block';
+        // Create and append elements to display the scan result
+        var h4 = document.createElement('h4');
+        h4.classList.add('d-flex', 'justify-content-between', 'align-items-center', 'mb-3');
+        var span = document.createElement('span');
+        span.classList.add('text-secondary');
+        span.textContent = 'Scan Results';
+        h4.appendChild(span);
+        resultDiv.appendChild(h4);       
+        
+        if (scanReturn.scan_result_code === 1) {
+            var errorP = document.createElement('p');
+            errorP.classList.add('text-danger');
+            errorP.textContent = 'File contains malware. Uploading is not allowed.';
+            resultDiv.appendChild(errorP);
+        } else if (scanReturn.scan_result_code  === 0) {
+            var successP = document.createElement('p');
+            successP.classList.add('text-success');
+            successP.textContent = 'File scanned successfully and is safe.';
+            resultDiv.appendChild(successP);
+
+            var sentP = document.createElement('p');
+            if(scanReturn.uploaded){
+                sentP.textContent = 'File sent to our staff!';
+            }else{
+                sentP.classList.add('text-danger');
+                sentP.textContent = 'Error sending to our staff!';
+            }            
+            resultDiv.appendChild(sentP);
+        } else {
+            var notAvailableP = document.createElement('p');
+            notAvailableP.textContent = 'Scan result not available.';
+            resultDiv.appendChild(notAvailableP);
+        }
+        
+        if (scanReturn.scan_result_code  === 1 && scanReturn.foundMalwares.length > 0) {
+            var malwareH2 = document.createElement('h2');
+            malwareH2.textContent = 'Malware Found:';
+            resultDiv.appendChild(malwareH2);
+
+            var malwareUl = document.createElement('ul');
+            resultDiv.appendChild(malwareUl);
+
+            var filenameLi = document.createElement('li');
+            filenameLi.innerHTML = 'Filename: ' + scanReturn.fileName;
+            malwareUl.appendChild(filenameLi);
+
+            for (var i = 0; i < scanReturn.foundMalwares.length; i++) {
+                var malwareLi = document.createElement('li');
+                malwareLi.innerHTML = 'Malware: ' + scanReturn.foundMalwares[i].malwareName;
+                malwareUl.appendChild(malwareLi);
+            }
+        }
+        
+    }
+
+
+</script>
+    </body>
+</html>
