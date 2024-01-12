@@ -1,0 +1,359 @@
+# build pipeline in Github actions
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+env:
+  FRONTEND_CONTAINER_NAME: "frontend"
+  BACKEND_CONTAINER_NAME: "backend"
+  TERMINAL_CONTAINER_NAME: "terminal"
+  LAZYMODE_CONTAINER_NAME: "lazymode"
+  ORDERS_CONTAINER_NAME: "orders"
+  AWS_DEFAULT_REGION: "us-east-1"
+  CFN_TEMPLATES_FOLDER: "templates/aws"
+  RELEASE: "latest"
+  STACK_NAME: "dundermifflen"
+  AMAAS_URL: "antimalware.us-1.cloudone.trendmicro.com:443"
+
+permissions:
+      id-token: write   # This is required for requesting the JWT
+      contents: read    # This is required for actions/checkout
+
+jobs:
+
+  LinterCFN:
+    name: Linter Templates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Setup Linter cfn-lint
+        uses: scottbrenner/cfn-lint-action@v2.3.5
+      - name: Run Linter
+        run: |
+          shopt -s globstar # enable globbing
+          cfn-lint --version
+          cfn-lint -t ${{ env.CFN_TEMPLATES_FOLDER }}/*template.yaml
+  LinterCode:
+    name: Linter Code
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+  Scanner:
+    runs-on: ubuntu-latest
+    name: Template Scanner
+    needs: [ LinterCFN, LinterCode ]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Template Scanner
+        uses: raphabot/conformity-template-scanner-pipeline@v1.0.3
+        env:
+          cc_apikey: ${{ secrets.C1_API_KEY }}
+          maxExtreme: 10
+          maxVeryHigh: 10
+          maxHigh: 10
+          maxMedium: 10
+          maxLow: 15
+          cc_region: us-west-2
+          templatesDirPath: templates/aws
+          cc_output_results: true
+      - name: 'Upload Scan Result Artifact'
+        uses: actions/upload-artifact@v3
+        with:
+          name: template-scan-result
+          path: results.json
+          retention-days: 30
+  Frontend:
+    runs-on: ubuntu-latest
+    name: Frontend Build
+    needs: Scanner
+    steps:
+    - uses: actions/checkout@v3
+    - name: configure aws credentials
+      uses: aws-actions/configure-aws-credentials@v1.7.0
+      with:
+        role-to-assume: ${{ secrets.AWS_GH_ROLE_ARN }}
+        role-session-name: GitHub_to_AWS_via_FederatedOIDC
+        aws-region: ${{ env.AWS_DEFAULT_REGION }}
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+    - name: Build the Docker image
+      run: docker build -t ${{ env.FRONTEND_CONTAINER_NAME }}:${{ env.RELEASE }} frontend/
+    - name: Vision One Container Security Scan
+      run: |
+        cd scripts && chmod +x tmas_install.sh && ./tmas_install.sh
+        export TMAS_API_KEY=${{ secrets.V1_API_KEY }}
+        docker save ${{ env.FRONTEND_CONTAINER_NAME }}:${{ env.RELEASE }} > image.tar
+        tmas scan docker-archive:image.tar --malwareScan --saveSBOM > result.json
+        mv SBOM_* SBOM.json
+        echo "TMAS Scan Result"
+        cat result.json
+    - name: 'Upload Scan Result Artifact'
+      uses: actions/upload-artifact@v3
+      with:
+        name: container-scan-result-${{ env.FRONTEND_CONTAINER_NAME }}
+        path: scripts/result.json
+        retention-days: 30
+    - name: 'Upload SBOM Artifact'
+      uses: actions/upload-artifact@v3
+      with:
+        name: sbom-${{ env.FRONTEND_CONTAINER_NAME }}
+        path: scripts/SBOM.json
+        retention-days: 30
+    - name: Tag the Docker Image
+      run: docker tag ${{ env.FRONTEND_CONTAINER_NAME }}:${{ env.RELEASE }} ${{secrets.ECR}}/${{ env.FRONTEND_CONTAINER_NAME }}:${{ env.RELEASE }}
+    - name: Push to ECR
+      run: docker push ${{secrets.ECR}}/${{ env.FRONTEND_CONTAINER_NAME }}:${{ env.RELEASE }}
+  Backend:
+    runs-on: ubuntu-latest
+    name: Backend Build
+    needs: Scanner
+    steps:
+    - uses: actions/checkout@v3
+    - name: configure aws credentials
+      uses: aws-actions/configure-aws-credentials@v1.7.0
+      with:
+        role-to-assume: ${{ secrets.AWS_GH_ROLE_ARN }}
+        role-session-name: GitHub_to_AWS_via_FederatedOIDC
+        aws-region: ${{ env.AWS_DEFAULT_REGION }}
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+    - name: Build the Docker image
+      run: docker build -t ${{ env.BACKEND_CONTAINER_NAME }}:${{ env.RELEASE }} backend/
+    - name: Vision One Container Security Scan
+      run: |
+        cd scripts && chmod +x tmas_install.sh && ./tmas_install.sh
+        export TMAS_API_KEY=${{ secrets.V1_API_KEY }}
+        docker save ${{ env.BACKEND_CONTAINER_NAME }}:${{ env.RELEASE }} > image.tar
+        tmas scan docker-archive:image.tar --malwareScan --saveSBOM > result.json
+        mv SBOM_* SBOM.json
+        echo "TMAS Scan Result"
+        cat result.json
+    - name: 'Upload Scan Result Artifact'
+      uses: actions/upload-artifact@v3
+      with:
+        name: container-scan-result-${{ env.BACKEND_CONTAINER_NAME }}
+        path: scripts/result.json
+        retention-days: 30
+    - name: 'Upload SBOM Artifact'
+      uses: actions/upload-artifact@v3
+      with:
+        name: sbom-${{ env.BACKEND_CONTAINER_NAME }}
+        path: scripts/SBOM.json
+        retention-days: 30
+    - name: Tag the Docker Image
+      run: docker tag ${{ env.BACKEND_CONTAINER_NAME }}:${{ env.RELEASE }} ${{secrets.ECR}}/${{ env.BACKEND_CONTAINER_NAME }}:${{ env.RELEASE }}
+    - name: Push to ECR
+      run: docker push ${{secrets.ECR}}/${{ env.BACKEND_CONTAINER_NAME }}:${{ env.RELEASE }}
+  Terminal:
+    runs-on: ubuntu-latest
+    name: Terminal Build
+    needs: Scanner
+    steps:
+    - uses: actions/checkout@v3
+    - name: configure aws credentials
+      uses: aws-actions/configure-aws-credentials@v1.7.0
+      with:
+        role-to-assume: ${{ secrets.AWS_GH_ROLE_ARN }}
+        role-session-name: GitHub_to_AWS_via_FederatedOIDC
+        aws-region: ${{ env.AWS_DEFAULT_REGION }}
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+    - name: Build the Docker image
+      run: docker build -t ${{ env.TERMINAL_CONTAINER_NAME }}:${{ env.RELEASE }} terminal/
+    - name: Vision One Container Security Scan
+      run: |
+        cd scripts && chmod +x tmas_install.sh && ./tmas_install.sh
+        export TMAS_API_KEY=${{ secrets.V1_API_KEY }}
+        docker save ${{ env.TERMINAL_CONTAINER_NAME }}:${{ env.RELEASE }} > image.tar
+        tmas scan docker-archive:image.tar --malwareScan --saveSBOM > result.json
+        mv SBOM_* SBOM.json
+        echo "TMAS Scan Result"
+        cat result.json
+    - name: 'Upload Scan Result Artifact'
+      uses: actions/upload-artifact@v3
+      with:
+        name: container-scan-result-${{ env.TERMINAL_CONTAINER_NAME }}
+        path: scripts/result.json
+        retention-days: 30
+    - name: 'Upload SBOM Artifact'
+      uses: actions/upload-artifact@v3
+      with:
+        name: sbom-${{ env.TERMINAL_CONTAINER_NAME }}
+        path: scripts/SBOM.json
+        retention-days: 30
+    - name: Tag the Docker Image
+      run: docker tag ${{ env.TERMINAL_CONTAINER_NAME }}:${{ env.RELEASE }} ${{secrets.ECR}}/${{ env.TERMINAL_CONTAINER_NAME }}:${{ env.RELEASE }}
+    - name: Push to ECR
+      run: docker push ${{secrets.ECR}}/${{ env.TERMINAL_CONTAINER_NAME }}:${{ env.RELEASE }}
+  LazyMode:
+    runs-on: ubuntu-latest
+    name: LazyMode Build
+    needs: Scanner
+    steps:
+    - uses: actions/checkout@v3
+    - name: configure aws credentials
+      uses: aws-actions/configure-aws-credentials@v1.7.0
+      with:
+        role-to-assume: ${{ secrets.AWS_GH_ROLE_ARN }}
+        role-session-name: GitHub_to_AWS_via_FederatedOIDC
+        aws-region: ${{ env.AWS_DEFAULT_REGION }}
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+    - name: Build the Docker image
+      run: docker build -t ${{ env.LAZYMODE_CONTAINER_NAME }}:${{ env.RELEASE }} lazymode/
+    - name: Vision One Container Security Scan
+      run: |
+        cd scripts && chmod +x tmas_install.sh && ./tmas_install.sh
+        export TMAS_API_KEY=${{ secrets.V1_API_KEY }}
+        docker save ${{ env.LAZYMODE_CONTAINER_NAME }}:${{ env.RELEASE }} > image.tar
+        tmas scan docker-archive:image.tar --malwareScan --saveSBOM > result.json
+        mv SBOM_* SBOM.json
+        echo "TMAS Scan Result"
+        cat result.json
+    - name: 'Upload Scan Result Artifact'
+      uses: actions/upload-artifact@v3
+      with:
+        name: container-scan-result-${{ env.LAZYMODE_CONTAINER_NAME }}
+        path: scripts/result.json
+        retention-days: 30
+    - name: 'Upload SBOM Artifact'
+      uses: actions/upload-artifact@v3
+      with:
+        name: sbom-${{ env.LAZYMODE_CONTAINER_NAME }}
+        path: scripts/SBOM.json
+        retention-days: 30
+    - name: Tag the Docker Image
+      run: docker tag ${{ env.LAZYMODE_CONTAINER_NAME }}:${{ env.RELEASE }} ${{secrets.ECR}}/${{ env.LAZYMODE_CONTAINER_NAME }}:${{ env.RELEASE }}
+    - name: Push to ECR
+      run: docker push ${{secrets.ECR}}/${{ env.LAZYMODE_CONTAINER_NAME }}:${{ env.RELEASE }}
+  Orders:
+    runs-on: ubuntu-latest
+    name: Orders Build
+    needs: Scanner
+    steps:
+    - uses: actions/checkout@v3
+    - name: configure aws credentials
+      uses: aws-actions/configure-aws-credentials@v1.7.0
+      with:
+        role-to-assume: ${{ secrets.AWS_GH_ROLE_ARN }}
+        role-session-name: GitHub_to_AWS_via_FederatedOIDC
+        aws-region: ${{ env.AWS_DEFAULT_REGION }}
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+    - name: Build the Docker image
+      run: docker build -t ${{ env.ORDERS_CONTAINER_NAME }}:${{ env.RELEASE }} orders/
+    - name: Vision One Container Security Scan
+      run: |
+        cd scripts && chmod +x tmas_install.sh && ./tmas_install.sh
+        export TMAS_API_KEY=${{ secrets.V1_API_KEY }}
+        docker save ${{ env.ORDERS_CONTAINER_NAME }}:${{ env.RELEASE }} > image.tar
+        tmas scan docker-archive:image.tar --malwareScan --saveSBOM > result.json
+        mv SBOM_* SBOM.json
+        echo "TMAS Scan Result"
+        cat result.json
+    - name: 'Upload Scan Result Artifact'
+      uses: actions/upload-artifact@v3
+      with:
+        name: container-scan-result-${{ env.ORDERS_CONTAINER_NAME }}
+        path: scripts/result.json
+        retention-days: 30
+    - name: 'Upload SBOM Artifact'
+      uses: actions/upload-artifact@v3
+      with:
+        name: sbom-${{ env.ORDERS_CONTAINER_NAME }}
+        path: scripts/SBOM.json
+        retention-days: 30
+    - name: Tag the Docker Image
+      run: docker tag ${{ env.ORDERS_CONTAINER_NAME }}:${{ env.RELEASE }} ${{secrets.ECR}}/${{ env.ORDERS_CONTAINER_NAME }}:${{ env.RELEASE }}
+    - name: Push to ECR
+      run: docker push ${{secrets.ECR}}/${{ env.ORDERS_CONTAINER_NAME }}:${{ env.RELEASE }}
+  UnitTestsFrontend:
+    name: Unit Tests Frontend
+    needs: [Frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Unit Tests
+        run: |
+          echo "Unit Tests"
+  UnitTestsBackend:
+    name: Unit Tests Backend
+    needs: [Backend]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Unit Tests
+        run: |
+          echo "Unit Tests"
+  UnitTestsTerminal:
+    name: Unit Tests Terminal
+    needs: [Terminal]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Unit Tests
+        run: |
+          echo "Unit Tests"
+  UnitTestsLazyMode:
+    name: Unit Tests LazyMode
+    needs: [LazyMode]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Unit Tests
+        run: |
+          echo "Unit Tests"
+  UnitTestsOrders:
+    name: Unit Tests Orders
+    needs: [Orders]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Unit Tests
+        run: |
+          echo "Unit Tests"
+  CFNSTACK:
+    name: Deploy CFN Stack
+    needs: [UnitTestsFrontend, UnitTestsBackend, UnitTestsTerminal, UnitTestsLazyMode, UnitTestsOrders]
+    runs-on: ubuntu-latest
+    environment: Production
+    steps:
+    - uses: actions/checkout@v3
+    - name: Configure AWS Credentials
+      run: |
+        echo "Configuring AWS Credentials"
+    - name: configure aws credentials
+      uses: aws-actions/configure-aws-credentials@v1.7.0
+      with:
+        role-to-assume: ${{ secrets.AWS_GH_ROLE_ARN }}
+        role-session-name: GitHub_to_AWS_via_FederatedOIDC
+        aws-region: ${{ env.AWS_DEFAULT_REGION }}
+    - name: Deploy CFN Stack
+      uses: aws-actions/aws-cloudformation-github-deploy@v1
+      with:
+        name: ${{ env.STACK_NAME }}
+        template: templates/aws/main.template.yaml
+        capabilities: CAPABILITY_IAM
+        no-fail-on-empty-changeset: "1"
+        parameter-overrides: >-
+          FrontendImage=${{ secrets.ECR }}/${{ env.FRONTEND_CONTAINER_NAME }}:${{ env.RELEASE }},
+          BackendImage=${{ secrets.ECR }}/${{ env.BACKEND_CONTAINER_NAME }}:${{ env.RELEASE }},
+          TerminalImage=${{ secrets.ECR }}/${{ env.TERMINAL_CONTAINER_NAME }}:${{ env.RELEASE }},
+          LazyModeImage=${{ secrets.ECR }}/${{ env.LAZYMODE_CONTAINER_NAME }}:${{ env.RELEASE }},
+          OrdersImage=${{ secrets.ECR }}/${{ env.ORDERS_CONTAINER_NAME }}:${{ env.RELEASE }},
+          AmaasURL=${{env.AMAAS_URL}},
+          APIKey=${{ secrets.V1_API_KEY }},
+          MyIP= ${{secrets.IP_ADDRESS}},
+          LaunchType= ${{secrets.LAUNCH_TYPE}}
