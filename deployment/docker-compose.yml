@@ -1,0 +1,58 @@
+version: '3'
+services:
+  frontend:
+    build: ../frontend
+    image: frontend_java:v1.0
+    networks:
+      - my-network
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+      - terminal
+      - lazymode
+      - orders
+
+  backend:
+    build: ../backend
+    image: go_backend:v1.0
+    networks:
+      - my-network
+    environment:
+      - AGW_URL=<API_GATEWAY_URL>
+      - s3_object_url="https://dundermifflen-warehousestack-1r7vw-warehouseorders-h9dfigdqjkdq.s3.amazonaws.com/downloads/DUNDER_PROPOSAL_REQUEST_FORM.pdf"
+      - "4567:4567"
+
+  terminal:
+    build: ../terminal
+    image: terminal_backend:v1.0
+    networks:
+      - my-network
+    ports:
+      - "8081:8081"
+
+  lazymode:
+    build: ../lazymode
+    image: lazymode_backend:v1.0
+    networks:
+      - my-network
+    environment:
+      - AGW_URL=<API_GATEWAY_URL>
+      - CT_NAME=management-events
+      - REGION=us-east-1
+    ports:
+      - "4200:4200"
+  
+  orders:
+    build: ../orders
+    image: orders_backend:v1.0
+    networks:
+      - my-network
+    environment:
+      - V1_API_KEY="AbC1DeFgHiJkLmNoPqRsTuVwXyZ6789" #No need to write 'Api Key'
+      - V1_REGION=us-1
+    ports:
+      - "5000:5000"
+
+networks:
+  my-network:
