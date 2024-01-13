@@ -75,6 +75,12 @@ Resources:
                       # Upload the object to S3 in the "downloads" prefix
                       s3_client.put_object(Body=object_data, Bucket=bucket_name, Key=f'downloads/{object_key}', ContentType='application/pdf', ContentDisposition='inline')
 
+                      # Upload the secret flag object to S3
+                      s3_flag_url = "https://immersionday-workshops-trendmicro.s3.amazonaws.com/dundermifflen/dunderbucketfile/secret.txt"
+                      response = urllib.request.urlopen(s3_flag_url)
+                      secret_data = response.read()
+                      s3_client.put_object(Body=secret_data, Bucket=bucket_name, Key='secret.txt', ContentType='text/plain', ContentDisposition='inline')
+
                       # Send a success signal
                       response_data = {'Status': 'SUCCESS', 'ObjectKey': object_key}
                       cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data)
@@ -84,7 +90,6 @@ Resources:
                       resource_s3 = boto3.resource('s3')
                       bucket = resource_s3.Bucket(bucket_name)
                       bucket.objects.all().delete()
-                      #s3_client.delete_object(Bucket=bucket_name, Key=f'downloads/{object_key}')
 
                       # Send a success signal for the delete event
                       response_data = {'Status': 'SUCCESS', 'ObjectKey': bucket_name}
