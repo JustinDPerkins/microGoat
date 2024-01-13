@@ -185,7 +185,7 @@
             </h4>
             <ul class="list-group mb-3">
               <li class="list-group-item d-flex justify-content-between lh-sm">
-                <a href="#" class="clickable-item" data-file="paper.txt">
+                <a href="#" class="clickable-item" data-file="paper.jpg">
                   <div>
                     <h6 class="my-0">Paper Products</h6>
                     <small class="text-body-secondary">Quality paper</small>
@@ -193,7 +193,7 @@
                 </a>
               </li>
               <li class="list-group-item d-flex justify-content-between lh-sm">
-                <a href="#" class="clickable-item" data-file="cardboard.txt">
+                <a href="#" class="clickable-item" data-file="cardboard.jpg">
                   <div>
                     <h6 class="my-0">CardBoard Products</h6>
                     <small class="text-body-secondary">Premium finish</small>
@@ -318,8 +318,14 @@ async function callLambda(file) {
         const response = await fetch(apiUrl);
 
         if (response.ok) {
-            const text = await response.text();
-            document.getElementById("file-search-result").innerHTML = `<p>${text}</p>`;
+            const contentType = response.headers.get('Content-Type');
+            if (contentType && contentType.startsWith('image')) {
+                const base64Content = await response.text();
+                document.getElementById("file-search-result").innerHTML = `<img src="data:${contentType};base64,${base64Content}" alt="Image">`;
+            } else {
+                const textContent = await response.text();
+                document.getElementById("file-search-result").innerHTML = `<p>${textContent}</p>`;
+            }
         } else {
             throw new Error(`HTTP error callLambda function! Status: ${response.status}`);
         }
