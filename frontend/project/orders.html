@@ -206,26 +206,8 @@
               </div>
               <div class="row g-5" id="result" style="display: none;">
                   <h4 class="d-flex justify-content-between align-items-center mb-3">
-                      <span class="text-secondary">Scan Results</span>
+                      <span class="text-secondary">Status</span>
                   </h4>
-                  {% if scan_result_code == 1 %}
-                      <p class="text-danger">File contains malware. Uploading is not allowed.</p>
-                  {% elif scan_result_code == 0 %}
-                      <!-- Only display if malware is not found -->
-                      <p class="text-success">File scanned successfully and is safe.</p>
-                  {% else %}
-                      <p>Scan result not available.</p>
-                  {% endif %}
-                  <!-- Display malware found if available -->
-                  {% if scan_result_code == 1 and scan_results.foundMalwares %}
-                      <h2>Malware Found:</h2>
-                      <ul>
-                          <li><p>Filename: {{ scan_results.fileName }}</p></li>
-                          {% for malware in scan_results.foundMalwares %}
-                              <li><p>Malware: {{ malware.malwareName }}</p></li>
-                          {% endfor %}
-                      </ul>
-                  {% endif %}
             </div>
           </div>
       </div>      
@@ -352,59 +334,15 @@
         var resultDiv = document.getElementById('result');
         resultDiv.innerHTML = ''; // Clear the existing content
         document.getElementById('result').style.display = 'block';
-        // Create and append elements to display the scan result
-        var h4 = document.createElement('h4');
-        h4.classList.add('d-flex', 'justify-content-between', 'align-items-center', 'mb-3');
-        var span = document.createElement('span');
-        span.classList.add('text-secondary');
-        span.textContent = 'Scan Results';
-        h4.appendChild(span);
-        resultDiv.appendChild(h4);       
-        
-        if (scanReturn.scan_result_code === 1) {
-            var errorP = document.createElement('p');
-            errorP.classList.add('text-danger');
-            errorP.textContent = 'File contains malware. Uploading is not allowed.';
-            resultDiv.appendChild(errorP);
-        } else if (scanReturn.scan_result_code  === 0) {
-            var successP = document.createElement('p');
-            successP.classList.add('text-success');
-            successP.textContent = 'File scanned successfully and is safe.';
-            resultDiv.appendChild(successP);
-
-            var sentP = document.createElement('p');
-            if(scanReturn.uploaded){
-                sentP.textContent = 'File sent to our staff!';
-            }else{
-                sentP.classList.add('text-danger');
-                sentP.textContent = 'Error sending to our staff!';
-            }            
-            resultDiv.appendChild(sentP);
-        } else {
-            var notAvailableP = document.createElement('p');
-            notAvailableP.textContent = 'Scan result not available.';
-            resultDiv.appendChild(notAvailableP);
-        }
-        
-        if (scanReturn.scan_result_code  === 1 && scanReturn.foundMalwares.length > 0) {
-            var malwareH2 = document.createElement('h2');
-            malwareH2.textContent = 'Malware Found:';
-            resultDiv.appendChild(malwareH2);
-
-            var malwareUl = document.createElement('ul');
-            resultDiv.appendChild(malwareUl);
-
-            var filenameLi = document.createElement('li');
-            filenameLi.innerHTML = 'Filename: ' + scanReturn.fileName;
-            malwareUl.appendChild(filenameLi);
-
-            for (var i = 0; i < scanReturn.foundMalwares.length; i++) {
-                var malwareLi = document.createElement('li');
-                malwareLi.innerHTML = 'Malware: ' + scanReturn.foundMalwares[i].malwareName;
-                malwareUl.appendChild(malwareLi);
-            }
-        }
-        
+      
+        var sentP = document.createElement('p');
+        if(scanReturn.uploaded){
+            sentP.textContent = 'File sent to our staff!';
+        }else{
+            sentP.classList.add('text-danger');
+            sentP.textContent = 'Error sending to our staff!';
+        }            
+        resultDiv.appendChild(sentP);
     }
 
 
