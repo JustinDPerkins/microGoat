@@ -1,4 +1,4 @@
-# Dunder Mifflen Products Exploit Walkthrough
+# The Boring Paper Company: Products Exploit Walkthrough
 
 This webpage is backed by API Gateway and Lambda. When a request is made the API forwards the request to lambda which in turns serves the content.
 

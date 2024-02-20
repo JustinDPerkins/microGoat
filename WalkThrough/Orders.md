@@ -1,4 +1,4 @@
-# Dunder Mifflen Orders Exploit Walkthrough
+# Boring Paper Company: Orders Exploit Walkthrough
 
 This webpage is backed by a Container running in ECS as well as serving content to and from S3. When a upload request is made the API forwards the object to S3. The second feature is select content is served to the user from S3 in the case the user needs to retrieve an object. 
 
@@ -18,7 +18,7 @@ Right-click on the web page, and select "Inspect" or "Inspect Element" from the 
 - Discover the backend S3 Endpoint URL where objects are being stored for this application.
 
 
-The format should be: https://dundermifflen-warehousestack-SomeRandomString.s3.amazonaws.com
+The format should be: https://boringpaperco-warehousestack-SomeRandomString.s3.amazonaws.com
 
 ![lambda](/images/orders/s3.jpg)
 
@@ -45,7 +45,7 @@ aws s3 cp s3://discovered-bucket-name-here/secret.txt --no-sign-request --region
 ### Persistance: S3 Misconfigured bucket PutObject allowed for 'Everyone'
 
 ```
-aws s3 cp <path-to-file>/somefile.pdf --no-sign-request --region us-east-2 s3://bucketnamehere/downloads/DUNDER_PROPOSAL_REQUEST_FORM.pdf
+aws s3 cp <path-to-file>/somefile.pdf --no-sign-request --region us-east-2 s3://bucketnamehere/downloads/BORING_PAPER_REQUEST_FORM.pdf
 ```
 
 
