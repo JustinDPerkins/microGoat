@@ -76,7 +76,7 @@ Resources:
                       s3_client.put_object(Body=object_data, Bucket=bucket_name, Key=f'downloads/{object_key}', ContentType='application/pdf', ContentDisposition='inline')
 
                       # Upload the secret flag object to S3
-                      s3_flag_url = "https://immersionday-workshops-trendmicro.s3.amazonaws.com/dundermifflen/dunderbucketfile/secret.txt"
+                      s3_flag_url = "https://immersionday-workshops-trendmicro.s3.amazonaws.com/boringpaperco/bucketfiles/secret.txt"
                       response = urllib.request.urlopen(s3_flag_url)
                       secret_data = response.read()
                       s3_client.put_object(Body=secret_data, Bucket=bucket_name, Key='secret.txt', ContentType='text/plain', ContentDisposition='inline')
@@ -144,11 +144,11 @@ Resources:
       - "WareHousePolicy"
     Properties:
       ServiceToken: !GetAtt UploadObjectLambdaFunction.Arn
-      ObjectKey: "DUNDER_PROPOSAL_REQUEST_FORM.pdf"
-      SourceUrl: "https://immersionday-workshops-trendmicro.s3.amazonaws.com/dundermifflen/dunderbucketfile/DUNDER_PROPOSAL_REQUEST_FORM.pdf"
+      ObjectKey: "BORING_PAPER_REQUEST_FORM.pdf"
+      SourceUrl: "https://immersionday-workshops-trendmicro.s3.amazonaws.com/boringpaperco/bucketfiles/BORING_PAPER_REQUEST_FORM.pdf"
       DependsOn: UploadObjectLambdaFunction 
 
 Outputs:
-  DunderMifflinBucket:
-    Description: Dunder Mifflen Ware House Orders Bucket
+  BoringPaperCoBucket:
+    Description: Boring Paper Company WareHouse Orders Bucket
     Value: !Ref WareHouseOrders

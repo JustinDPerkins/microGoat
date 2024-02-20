@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: An Example Vulnerable Lambda Function
+Description: Boring Paper Company Products Serverless Function
 
 Resources:
   ApiGateway:
@@ -47,7 +47,7 @@ Resources:
       Handler: index.handler
       Code:
         S3Bucket: immersionday-workshops-trendmicro
-        S3Key: dundermifflen/lambda/Lambda.zip 
+        S3Key: boringpaperco/lambda/Lambda.zip
       MemorySize: 512
       Timeout: 15
       Role: !GetAtt "VulnLambdaRole.Arn"
@@ -87,14 +87,6 @@ Resources:
             - "iam:ListAttachedRolePolicies"
             - "iam:AttachRolePolicy"
             Resource: "*"
-  
-  APIURLParameter:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: /dunder/vulnerableapiurl
-      Description: Vulnerable API Endpoint for Lambda
-      Type: String
-      Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/dev/lambda"
 
 Outputs:
   VulnAPIEndpointURL:

@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Amazon VPC - 2 Public, 2 Private subnets, 2 NAT Gateways for outbound'  
+Description: The Boring Paper Company VPC Network 
 
 Parameters:
   VpcBlock:

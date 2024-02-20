@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: 'Dunder Mifflen Repositories and OIDC IAM Role for GitHub'
+Description: 'The Boring Paper Co Repo and OIDC IAM Role for GitHub'
 Parameters:
   RepositoryNames:
     Type: CommaDelimitedList

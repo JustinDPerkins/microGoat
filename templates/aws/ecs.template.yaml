@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Dunder Mifflen Cluster: ECS'
+Description: 'The Boring Paper Company Cluster: ECS'
 
 Parameters:
   MyIP:
@@ -15,7 +15,7 @@ Parameters:
     Default: ""
   
   WareHouseBucket:
-    Description: Dudner WareHouse Orders Bucket Name.
+    Description: Boring Paper Co WareHouse Bucket.
     Type: String
     Default: ""
   
@@ -80,9 +80,9 @@ Parameters:
     Default: ""
 
   Domain:
-    Description: An arbitrary internal domain name for the application (only required for internal service discovery - default is dunder.local). It must be unique across multiple deploymemts.
+    Description: An arbitrary internal domain name for the application (For internal service discovery - default is boringpaperco.local). It must be unique across multiple deploymemts.
     Type: String
-    Default: "dunder.local"
+    Default: "boringpaperco.local"
 
   CountOfUiTasks:
     Description: The number of tasks to be instantiated for the UI service  
@@ -129,7 +129,7 @@ Conditions:
   IsEC2LaunchType: !Equals [!Ref LaunchType, "EC2"]
            
 Resources:
-  DunderCluster:
+  BoringPaperCoCluster:
     Type: AWS::ECS::Cluster
   
   ECSTaskRole:
@@ -143,7 +143,7 @@ Resources:
             Action: sts:AssumeRole
       Path: /
       Policies:
-        - PolicyName: DunderOrdersECSPolicy
+        - PolicyName: BoringPaperCoOrdersECSPolicy
           PolicyDocument:
             Statement:
               - Effect: Allow
@@ -158,7 +158,7 @@ Resources:
     Type: AWS::ECS::Service
     Properties: 
         LaunchType: !If [IsEC2LaunchType, "EC2", !Ref LaunchType]
-        Cluster: !Ref DunderCluster
+        Cluster: !Ref BoringPaperCoCluster
         DesiredCount: !Ref CountOfAppserverTasks
         ServiceRegistries:
             - RegistryArn: !GetAtt LazyModeServiceDiscoveryEntry.Arn
@@ -190,18 +190,20 @@ Resources:
                   Value: !Ref 'Domain' 
                 - Name: AGW_URL
                   Value: !Ref 'APIGatewayURL'
+                - Name: REGION
+                  Value: !Ref 'AWS::Region'
               LogConfiguration:
                 LogDriver: awslogs
                 Options:
                     awslogs-group: !Ref AWS::StackName
                     awslogs-region: !Ref AWS::Region
-                    awslogs-stream-prefix: "dunder"
+                    awslogs-stream-prefix: "boringpaperco"
 
   BackendService: 
     Type: AWS::ECS::Service
     Properties: 
         LaunchType: !If [IsEC2LaunchType, "EC2", !Ref LaunchType]
-        Cluster: !Ref DunderCluster
+        Cluster: !Ref BoringPaperCoCluster
         DesiredCount: !Ref CountOfAppserverTasks
         ServiceRegistries:
             - RegistryArn: !GetAtt BackendServiceDiscoveryEntry.Arn
@@ -233,7 +235,7 @@ Resources:
                 - Name: SEARCH_DOMAIN
                   Value: !Ref 'Domain'
                 - Name: s3_object_url
-                  Value: !Sub "https://${WareHouseBucket}.s3.amazonaws.com/downloads/DUNDER_PROPOSAL_REQUEST_FORM.pdf"
+                  Value: !Sub "https://${WareHouseBucket}.s3.amazonaws.com/downloads/BORING_PAPER_REQUEST_FORM.pdf"
                 - Name: s3_bucket_name
                   Value: !Ref WareHouseBucket
                 - Name: AGW_URL
@@ -251,13 +253,13 @@ Resources:
                 Options:
                     awslogs-group: !Ref AWS::StackName
                     awslogs-region: !Ref AWS::Region
-                    awslogs-stream-prefix: "dunder"
+                    awslogs-stream-prefix: "boringpaperco"
 
   TerminalService: 
     Type: AWS::ECS::Service
     Properties: 
         LaunchType: !If [IsEC2LaunchType, "EC2", !Ref LaunchType]
-        Cluster: !Ref DunderCluster
+        Cluster: !Ref BoringPaperCoCluster
         DesiredCount: !Ref CountOfAppserverTasks
         ServiceRegistries:
             - RegistryArn: !GetAtt TerminalServiceDiscoveryEntry.Arn
@@ -293,13 +295,13 @@ Resources:
                 Options:
                     awslogs-group: !Ref AWS::StackName
                     awslogs-region: !Ref AWS::Region
-                    awslogs-stream-prefix: "dunder"
+                    awslogs-stream-prefix: "boringpaperco"
   
   OrdersService: 
     Type: AWS::ECS::Service
     Properties: 
         LaunchType: !If [IsEC2LaunchType, "EC2", !Ref LaunchType]
-        Cluster: !Ref DunderCluster
+        Cluster: !Ref BoringPaperCoCluster
         DesiredCount: !Ref CountOfAppserverTasks
         ServiceRegistries:
             - RegistryArn: !GetAtt OrdersServiceDiscoveryEntry.Arn
@@ -333,7 +335,7 @@ Resources:
                 - Name: V1_API_KEY
                   Value: !Ref 'APIKey'
                 - Name: s3_object_url
-                  Value: !Sub "https://${WareHouseBucket}.s3.amazonaws.com/downloads/DUNDER_PROPOSAL_REQUEST_FORM.pdf"
+                  Value: !Sub "https://${WareHouseBucket}.s3.amazonaws.com/downloads/BORING_PAPER_REQUEST_FORM.pdf"
                 - Name: s3_bucket_name
                   Value: !Ref WareHouseBucket
               LogConfiguration:
@@ -341,14 +343,14 @@ Resources:
                 Options:
                     awslogs-group: !Ref AWS::StackName
                     awslogs-region: !Ref AWS::Region
-                    awslogs-stream-prefix: "dunder"
+                    awslogs-stream-prefix: "boringpaperco"
 
   FrontendService: 
     Type: AWS::ECS::Service
     DependsOn: LoadBalancerListener
     Properties: 
         LaunchType: !If [IsEC2LaunchType, "EC2", !Ref LaunchType]
-        Cluster: !Ref DunderCluster
+        Cluster: !Ref BoringPaperCoCluster
         DesiredCount: !Ref CountOfUiTasks
         ServiceRegistries:
             - RegistryArn: !GetAtt FrontendServiceDiscoveryEntry.Arn
@@ -387,7 +389,7 @@ Resources:
                 Options:
                     awslogs-group: !Ref AWS::StackName
                     awslogs-region: !Ref AWS::Region
-                    awslogs-stream-prefix: "dunder"
+                    awslogs-stream-prefix: "boringpaperco"
 
   CloudWatchLogsGroup:
     Type: AWS::Logs::LogGroup
@@ -611,7 +613,7 @@ Resources:
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash -xe
-          echo ECS_CLUSTER=${DunderCluster} >> /etc/ecs/ecs.config
+          echo ECS_CLUSTER=${BoringPaperCoCluster} >> /etc/ecs/ecs.config
           yum install -y aws-cfn-bootstrap
           /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource ECSAutoScalingGroup --region ${AWS::Region}
   

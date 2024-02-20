@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Root Template for Dunder Mifflen Infrastructure
+Description: Root Template for The Boring Paper Company Infrastructure
 Parameters:
   FrontendImage:
     Description: Frontend ECR image URI
@@ -63,29 +63,29 @@ Resources:
   ServerlessStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://immersionday-workshops-trendmicro.s3.amazonaws.com/dundermifflen/templates/lambda.template.yaml
+      TemplateURL: https://immersionday-workshops-trendmicro.s3.amazonaws.com/boringpaperco/templates/lambda.template.yaml
   
   WareHouseStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://immersionday-workshops-trendmicro.s3.amazonaws.com/dundermifflen/templates/s3.template.yaml
+      TemplateURL: https://immersionday-workshops-trendmicro.s3.amazonaws.com/boringpaperco/templates/s3.template.yaml
 
   VPCNetworkStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://immersionday-workshops-trendmicro.s3.amazonaws.com/dundermifflen/templates/vpc.template.yaml
+      TemplateURL: https://immersionday-workshops-trendmicro.s3.amazonaws.com/boringpaperco/templates/vpc.template.yaml
 
   ECSStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: https://immersionday-workshops-trendmicro.s3.amazonaws.com/dundermifflen/templates/ecs.template.yaml
+      TemplateURL: https://immersionday-workshops-trendmicro.s3.amazonaws.com/boringpaperco/templates/ecs.template.yaml
       Parameters:
         FrontendImage: !Ref FrontendImage
         BackendImage: !Ref BackendImage
         TerminalImage: !Ref TerminalImage
         LazyModeImage: !Ref LazyModeImage
         OrdersImage: !Ref OrdersImage
-        WareHouseBucket: !GetAtt WareHouseStack.Outputs.DunderMifflinBucket
+        WareHouseBucket: !GetAtt WareHouseStack.Outputs.BoringPaperCoBucket
         VPC: !GetAtt VPCNetworkStack.Outputs.VpcId
         PublicSubnetOne: !GetAtt VPCNetworkStack.Outputs.PublicSubnet1
         PublicSubnetTwo: !GetAtt VPCNetworkStack.Outputs.PublicSubnet2
@@ -104,7 +104,7 @@ Outputs:
     Value: !GetAtt ServerlessStack.Outputs.VulnAPIEndpointURL
   
   VpcId:
-    Description: The VPC Id
+    Description: The VPC ID
     Value: !GetAtt VPCNetworkStack.Outputs.VpcId
 
   WebAppURL:
@@ -112,5 +112,5 @@ Outputs:
     Value: !GetAtt ECSStack.Outputs.LoadBalancerUrl
   
   WareHouseBucket:
-    Description: Dunder Mifflen Order Process Bucket
-    Value: !GetAtt WareHouseStack.Outputs.DunderMifflinBucket
+    Description: The Boring Paper Co Order Processes Bucket
+    Value: !GetAtt WareHouseStack.Outputs.BoringPaperCoBucket
