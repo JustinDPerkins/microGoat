@@ -109,3 +109,28 @@ docker-compose down
 ## AWS Architecture
 
 ![architecture](/images/diagram.png)
+
+---
+
+## Contributors ✨
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tr>
+    <td align="center"><a href="https://github.com/felipecosta09"><img src="https://avatars.githubusercontent.com/u/33869171?v=4" width="100px;" alt=""/><br /><sub><b>Felipe Costa</b></sub></a><br /><a href="https://github.com/JustinDPerkins/microGoat/commits/main/?author=felipecosta09" title="Code">💻</a></td>
+    <td align="center"><a href="https://github.com/yanmaxsette"><img src="https://avatars.githubusercontent.com/u/31935208?v=4" width="100px;" alt=""/><br /><sub><b>Yan Pinheiro</b></sub></a><br /><a href="https://github.com/JustinDPerkins/microGoat/commits/main/?author=yanmaxsette" title="Code">💻</a></td>
+    <td align="center"><a href="https://github.com/jmlake569"><img src="https://avatars.githubusercontent.com/u/37003520?v=4" width="100px;" alt=""/><br /><sub><b>Jacob Lake</b></sub></a><br /><a href="https://github.com/JustinDPerkins/microGoat/commits/main/?author=jmlake569" title="Code">💻</a></td>
+    <td align="center"><a href="https://github.com/JustinDPerkins"><img src="https://avatars.githubusercontent.com/u/60413733?v=4" width="100px;" alt=""/><br /><sub><b>Justin Perkins</b></sub></a><br /><a href="https://github.com/JustinDPerkins/microGoat/commits/main/?author=JustinDPerkins" title="Code">💻</a>
+  </tr>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome! 
+
+Thanks also to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
