@@ -15,7 +15,7 @@ env:
   AWS_DEFAULT_REGION: "us-east-1"
   CFN_TEMPLATES_FOLDER: "templates/aws"
   RELEASE: "latest"
-  STACK_NAME: "dundermifflen"
+  STACK_NAME: "boringpaperco"
   AMAAS_URL: "antimalware.us-1.cloudone.trendmicro.com:443"
 
 permissions:
