@@ -148,7 +148,7 @@
             .then(config => {
                 // Check if running locally or on the deployed environment
                 const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-                const websocketURL = config && config.loadBalancerUrl ? config.loadBalancerUrl : 'localhost:8081';
+                const websocketURL = config && config.loadBalancerUrl ? config.loadBalancerUrl : 'terminal:8081';
                 setupWebSocket(websocketURL, isLocal);
             })
             .catch(error => {
