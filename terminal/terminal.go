@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os/exec"
@@ -58,8 +59,39 @@ func handleTerminalConnection(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func executeCommandHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		return
+	}
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("Error reading request body: %v\n", err)
+		http.Error(w, "Error reading request", http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+
+	command := string(body)
+	log.Printf("Received command to execute: %s\n", command)
+
+	cmdOutput, err := exec.Command("sh", "-c", command).CombinedOutput()
+	if err != nil {
+		errMsg := fmt.Sprintf("Error executing command: %s\n", err)
+		log.Printf("%s\n", errMsg)
+		http.Error(w, errMsg, http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("Command executed successfully. Output: %s\n", string(cmdOutput))
+	w.Header().Set("Content-Type", "text/plain")
+	w.Write(cmdOutput)
+}
+
 func main() {
-	http.HandleFunc("/terminal", handleTerminalConnection)
+	http.HandleFunc("/terminal", handleTerminalConnection) // WebSocket handler
+	http.HandleFunc("/execute", executeCommandHandler)     // New HTTP POST handler for commands
 
 	port := "8081"
 	log.Printf("Server is starting on port %s...\n", port)
