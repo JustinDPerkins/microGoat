@@ -4,6 +4,18 @@ FROM golang:latest
 # Set noninteractive installation mode
 ENV DEBIAN_FRONTEND=noninteractive
 
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy the local code to the container's working directory
+COPY . /app
+
+# Build the Go application
+RUN go build -o main .
+
+# Expose port 8081 for the application
+EXPOSE 8081
+
 # Update the package list and install necessary packages
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -11,7 +23,8 @@ RUN apt-get update && \
     curl \
     git \
     openssh-client \
-    && rm -rf /var/lib/apt/lists/*
+    sudo && \
+    rm -rf /var/lib/apt/lists/*
 
 # Create AWS credentials file
 RUN mkdir -p /root/.aws && \
@@ -41,3 +54,4 @@ EXPOSE 8081
 
 # Define the command to run the app
 CMD ["./main"]
+
