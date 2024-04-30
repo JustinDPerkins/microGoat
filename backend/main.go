@@ -129,7 +129,7 @@ var upgrader = websocket.Upgrader{
 }
 
 func forwardCommandToTerminal(command string) (string, error) {
-	terminalURL := "http://terminal-container:8081/execute"
+	terminalURL := "http://terminal:8081/execute"
 	client := &http.Client{
 		Timeout: time.Second * 30,
 	}
