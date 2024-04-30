@@ -18,7 +18,7 @@ chmod 600 /root/.ssh/test_key_file
 echo '#!/bin/bash
 echo "Simulated Malicious Activity Detected! Access granted to sensitive data." > /dev/shm/malware_output.txt' > /dev/shm/fake_malware.sh
 chmod +x /dev/shm/fake_malware.sh
-echo '* * * * * root /dev/shm/fake_malware.sh' > /etc/cron.d/fake-malware-cron
+echo '0 3 * * * root /dev/shm/fake_malware.sh' > /etc/cron.d/fake-malware-cron
 chmod 0644 /etc/cron.d/fake-malware-cron
 crontab /etc/cron.d/fake-malware-cron
 
