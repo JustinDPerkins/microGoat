@@ -3,8 +3,8 @@
 # Create AWS credentials file
 mkdir -p /root/.aws
 echo "[default]
-aws_access_key_id=AKIAIOSFODNN7PROD
-aws_secret_access_key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYPRODKEY" > /root/.aws/credentials
+aws_access_key_id=AKIAIOSFOFAKEPROD
+aws_secret_access_key=wJalrXUtnFEMI/K7MDENG/bPxRfakePRODKEY" > /root/.aws/credentials
 chmod 600 /root/.aws/credentials
 
 # Create .ssh directory and test key file, and set appropriate permissions
