@@ -4,7 +4,7 @@
 mkdir -p /root/.aws
 echo "[default]
 aws_access_key_id=AKIAIOSFOFAKEPROD
-aws_secret_access_key=wJalrXUtnFEMI/K7MDENG/bPxRfakePRODKEY" > /root/.aws/credentials
+aws_secret_access_key=wJalrXUtnFEMI/K7MDEFLAG=FAKEPRODKEY2a" > /root/.aws/credentials
 chmod 600 /root/.aws/credentials
 
 # Create .ssh directory and test key file, and set appropriate permissions
