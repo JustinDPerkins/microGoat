@@ -11,14 +11,15 @@ WORKDIR /app
 COPY . /app
 COPY entrypoint.sh /entrypoint.sh
 
-# Update the package list and install necessary packages including cron
+# Update the package list and install necessary packages including cron and openssl
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
     git \
     openssh-client \
     sudo \
-    cron && \
+    cron \
+    openssl && \
     rm -rf /var/lib/apt/lists/*
 
 # Build the Go application
@@ -32,5 +33,4 @@ EXPOSE 8081
 
 # Set the entrypoint to the entrypoint script
 ENTRYPOINT ["/entrypoint.sh"]
-
 

