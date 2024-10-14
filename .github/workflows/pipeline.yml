@@ -7,6 +7,7 @@ on:
     branches: [ main ]
   workflow_dispatch:
 env:
+  SKIP_LINT: false
   FRONTEND_CONTAINER_NAME: "frontend"
   BACKEND_CONTAINER_NAME: "backend"
   TERMINAL_CONTAINER_NAME: "terminal"
@@ -19,14 +20,15 @@ env:
   AMAAS_URL: "antimalware.us-1.cloudone.trendmicro.com:443"
 
 permissions:
-      id-token: write   # This is required for requesting the JWT
-      contents: read    # This is required for actions/checkout
+  id-token: write
+  contents: read
 
 jobs:
 
   LinterCFN:
     name: Linter Templates
     runs-on: ubuntu-latest
+    if: env.SKIP_LINT == 'false'  # Only run linting if SKIP_LINT is false
     steps:
       - uses: actions/checkout@v3
         with:
@@ -38,9 +40,11 @@ jobs:
           shopt -s globstar # enable globbing
           cfn-lint --version
           cfn-lint -t ${{ env.CFN_TEMPLATES_FOLDER }}/*template.yaml
+
   LinterCode:
     name: Linter Code
     runs-on: ubuntu-latest
+    if: env.SKIP_LINT == 'false'  # Only run linting if SKIP_LINT is false
     steps:
       - uses: actions/checkout@v3
         with:
