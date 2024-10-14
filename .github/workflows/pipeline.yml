@@ -6,12 +6,6 @@ on:
   push:
     branches: [ main ]
   workflow_dispatch:
-    inputs:
-      skip_lint:
-        description: 'Set to true to skip linting'
-        required: false
-        default: 'false'
-
 env:
   FRONTEND_CONTAINER_NAME: "frontend"
   BACKEND_CONTAINER_NAME: "backend"
@@ -25,15 +19,14 @@ env:
   AMAAS_URL: "antimalware.us-1.cloudone.trendmicro.com:443"
 
 permissions:
-  id-token: write
-  contents: read
+      id-token: write   # This is required for requesting the JWT
+      contents: read    # This is required for actions/checkout
 
 jobs:
 
   LinterCFN:
     name: Linter Templates
     runs-on: ubuntu-latest
-    if: github.event.inputs.skip_lint == 'false'  # Use inputs from the workflow dispatch event
     steps:
       - uses: actions/checkout@v3
         with:
@@ -44,17 +37,14 @@ jobs:
         run: |
           shopt -s globstar # enable globbing
           cfn-lint --version
-          cfn-lint -t ${{ env.CFN_TEMPLATES_FOLDER }}/*template.yaml
-
+          
   LinterCode:
     name: Linter Code
     runs-on: ubuntu-latest
-    if: github.event.inputs.skip_lint == 'false'  # Use inputs from the workflow dispatch event
     steps:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-
   Scanner:
     runs-on: ubuntu-latest
     name: Template Scanner
