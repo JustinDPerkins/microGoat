@@ -92,9 +92,7 @@ jobs:
         export TMAS_API_KEY=${{ secrets.V1_API_KEY }}
         docker save ${{ env.FRONTEND_CONTAINER_NAME }}:${{ env.RELEASE }} > image.tar
         tmas scan docker-archive:image.tar --malware --saveSBOM > result.json
-        mv SBOM_* SBOM.json
-        echo "TMAS Scan Result"
-        cat result.json
+       
     - name: 'Upload Scan Result Artifact'
       uses: actions/upload-artifact@v3
       with:
@@ -134,9 +132,7 @@ jobs:
         export TMAS_API_KEY=${{ secrets.V1_API_KEY }}
         docker save ${{ env.BACKEND_CONTAINER_NAME }}:${{ env.RELEASE }} > image.tar
         tmas scan docker-archive:image.tar --malware --saveSBOM > result.json
-        mv SBOM_* SBOM.json
-        echo "TMAS Scan Result"
-        cat result.json
+        
     - name: 'Upload Scan Result Artifact'
       uses: actions/upload-artifact@v3
       with:
@@ -176,9 +172,7 @@ jobs:
         export TMAS_API_KEY=${{ secrets.V1_API_KEY }}
         docker save ${{ env.TERMINAL_CONTAINER_NAME }}:${{ env.RELEASE }} > image.tar
         tmas scan docker-archive:image.tar --malware --saveSBOM > result.json
-        mv SBOM_* SBOM.json
-        echo "TMAS Scan Result"
-        cat result.json
+        
     - name: 'Upload Scan Result Artifact'
       uses: actions/upload-artifact@v3
       with:
@@ -218,9 +212,7 @@ jobs:
         export TMAS_API_KEY=${{ secrets.V1_API_KEY }}
         docker save ${{ env.LAZYMODE_CONTAINER_NAME }}:${{ env.RELEASE }} > image.tar
         tmas scan docker-archive:image.tar --malware --saveSBOM > result.json
-        mv SBOM_* SBOM.json
-        echo "TMAS Scan Result"
-        cat result.json
+        
     - name: 'Upload Scan Result Artifact'
       uses: actions/upload-artifact@v3
       with:
@@ -260,9 +252,7 @@ jobs:
         export TMAS_API_KEY=${{ secrets.V1_API_KEY }}
         docker save ${{ env.ORDERS_CONTAINER_NAME }}:${{ env.RELEASE }} > image.tar
         tmas scan docker-archive:image.tar --malware --saveSBOM > result.json
-        mv SBOM_* SBOM.json
-        echo "TMAS Scan Result"
-        cat result.json
+        
     - name: 'Upload Scan Result Artifact'
       uses: actions/upload-artifact@v3
       with:
