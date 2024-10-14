@@ -6,8 +6,13 @@ on:
   push:
     branches: [ main ]
   workflow_dispatch:
+    inputs:
+      skip_lint:
+        description: 'Set to true to skip linting'
+        required: false
+        default: 'false'
+
 env:
-  SKIP_LINT: false
   FRONTEND_CONTAINER_NAME: "frontend"
   BACKEND_CONTAINER_NAME: "backend"
   TERMINAL_CONTAINER_NAME: "terminal"
@@ -28,7 +33,7 @@ jobs:
   LinterCFN:
     name: Linter Templates
     runs-on: ubuntu-latest
-    if: env.SKIP_LINT == 'false'  # Only run linting if SKIP_LINT is false
+    if: github.event.inputs.skip_lint == 'false'  # Use inputs from the workflow dispatch event
     steps:
       - uses: actions/checkout@v3
         with:
@@ -44,11 +49,12 @@ jobs:
   LinterCode:
     name: Linter Code
     runs-on: ubuntu-latest
-    if: env.SKIP_LINT == 'false'  # Only run linting if SKIP_LINT is false
+    if: github.event.inputs.skip_lint == 'false'  # Use inputs from the workflow dispatch event
     steps:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
+
   Scanner:
     runs-on: ubuntu-latest
     name: Template Scanner
