@@ -23,6 +23,20 @@ permissions:
       contents: read    # This is required for actions/checkout
 
 jobs:
+  scanner:                         # <–– this is now your root job
+    runs-on: ubuntu-latest
+    name: Container Security Scan
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install TMAS
+        run: |
+          cd scripts
+          chmod +x tmas_install.sh
+          ./tmas_install.sh
+      - name: Scan all images
+        run: |
+          export TMAS_API_KEY=${{ secrets.V1_API_KEY }}
+          
   Frontend:
     runs-on: ubuntu-latest
     name: Frontend Build
