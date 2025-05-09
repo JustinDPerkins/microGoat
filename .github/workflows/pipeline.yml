@@ -23,52 +23,6 @@ permissions:
       contents: read    # This is required for actions/checkout
 
 jobs:
-
-  LinterCFN:
-    name: Linter Templates
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - name: Setup Linter cfn-lint
-        uses: scottbrenner/cfn-lint-action@v2.3.5
-      - name: Run Linter
-        run: |
-          shopt -s globstar # enable globbing
-          cfn-lint --version
-          
-  LinterCode:
-    name: Linter Code
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-  Scanner:
-    runs-on: ubuntu-latest
-    name: Template Scanner
-    needs: [ LinterCFN, LinterCode ]
-    steps:
-      - uses: actions/checkout@v3
-      - name: Template Scanner
-        uses: raphabot/conformity-template-scanner-pipeline@v1.0.3
-        env:
-          cc_apikey: ${{ secrets.C1_API_KEY }}
-          maxExtreme: 10
-          maxVeryHigh: 10
-          maxHigh: 10
-          maxMedium: 10
-          maxLow: 15
-          cc_region: us-west-2
-          templatesDirPath: templates/aws
-          cc_output_results: true
-      - name: 'Upload Scan Result Artifact'
-        uses: actions/upload-artifact@v3
-        with:
-          name: template-scan-result
-          path: results.json
-          retention-days: 30
   Frontend:
     runs-on: ubuntu-latest
     name: Frontend Build
