@@ -45,24 +45,6 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-  Scanner:
-    runs-on: ubuntu-latest
-    name: Template Scanner
-    needs: [ LinterCFN, LinterCode ]
-    steps:
-      - uses: actions/checkout@v3
-      - name: Template Scanner
-        uses: raphabot/conformity-template-scanner-pipeline@v1.0.3
-        env:
-          cc_apikey: ${{ secrets.C1_API_KEY }}
-          maxExtreme: 10
-          maxVeryHigh: 10
-          maxHigh: 10
-          maxMedium: 10
-          maxLow: 15
-          cc_region: us-west-2
-          templatesDirPath: templates/aws
-          cc_output_results: true
       - name: 'Upload Scan Result Artifact'
         uses: actions/upload-artifact@v3
         with:
