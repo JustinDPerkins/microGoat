@@ -28,7 +28,7 @@ jobs:
     name: Linter Templates
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Setup Linter cfn-lint
@@ -42,11 +42,11 @@ jobs:
     name: Linter Code
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: 'Upload Scan Result Artifact'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: template-scan-result
           path: results.json
@@ -55,7 +55,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Frontend Build
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: configure aws credentials
       uses: aws-actions/configure-aws-credentials@v1.7.0
       with:
@@ -77,13 +77,13 @@ jobs:
         echo "TMAS Scan Result"
         cat result.json
     - name: 'Upload Scan Result Artifact'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: container-scan-result-${{ env.FRONTEND_CONTAINER_NAME }}
         path: scripts/result.json
         retention-days: 30
     - name: 'Upload SBOM Artifact'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: sbom-${{ env.FRONTEND_CONTAINER_NAME }}
         path: scripts/SBOM.json
@@ -96,7 +96,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Backend Build
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: configure aws credentials
       uses: aws-actions/configure-aws-credentials@v1.7.0
       with:
@@ -118,13 +118,13 @@ jobs:
         echo "TMAS Scan Result"
         cat result.json
     - name: 'Upload Scan Result Artifact'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: container-scan-result-${{ env.BACKEND_CONTAINER_NAME }}
         path: scripts/result.json
         retention-days: 30
     - name: 'Upload SBOM Artifact'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: sbom-${{ env.BACKEND_CONTAINER_NAME }}
         path: scripts/SBOM.json
@@ -159,13 +159,13 @@ jobs:
         echo "TMAS Scan Result"
         cat result.json
     - name: 'Upload Scan Result Artifact'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: container-scan-result-${{ env.TERMINAL_CONTAINER_NAME }}
         path: scripts/result.json
         retention-days: 30
     - name: 'Upload SBOM Artifact'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: sbom-${{ env.TERMINAL_CONTAINER_NAME }}
         path: scripts/SBOM.json
@@ -178,7 +178,7 @@ jobs:
     runs-on: ubuntu-latest
     name: LazyMode Build
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: configure aws credentials
       uses: aws-actions/configure-aws-credentials@v1.7.0
       with:
@@ -200,13 +200,13 @@ jobs:
         echo "TMAS Scan Result"
         cat result.json
     - name: 'Upload Scan Result Artifact'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: container-scan-result-${{ env.LAZYMODE_CONTAINER_NAME }}
         path: scripts/result.json
         retention-days: 30
     - name: 'Upload SBOM Artifact'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: sbom-${{ env.LAZYMODE_CONTAINER_NAME }}
         path: scripts/SBOM.json
@@ -219,7 +219,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Orders Build
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: configure aws credentials
       uses: aws-actions/configure-aws-credentials@v1.7.0
       with:
@@ -241,13 +241,13 @@ jobs:
         echo "TMAS Scan Result"
         cat result.json
     - name: 'Upload Scan Result Artifact'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: container-scan-result-${{ env.ORDERS_CONTAINER_NAME }}
         path: scripts/result.json
         retention-days: 30
     - name: 'Upload SBOM Artifact'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: sbom-${{ env.ORDERS_CONTAINER_NAME }}
         path: scripts/SBOM.json
@@ -261,7 +261,7 @@ jobs:
     needs: [Frontend]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Unit Tests
         run: |
           echo "Unit Tests"
@@ -270,7 +270,7 @@ jobs:
     needs: [Backend]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Unit Tests
         run: |
           echo "Unit Tests"
@@ -279,7 +279,7 @@ jobs:
     needs: [Terminal]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Unit Tests
         run: |
           echo "Unit Tests"
@@ -288,7 +288,7 @@ jobs:
     needs: [LazyMode]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Unit Tests
         run: |
           echo "Unit Tests"
@@ -297,7 +297,7 @@ jobs:
     needs: [Orders]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Unit Tests
         run: |
           echo "Unit Tests"
@@ -307,7 +307,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: Production
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Configure AWS Credentials
       run: |
         echo "Configuring AWS Credentials"
