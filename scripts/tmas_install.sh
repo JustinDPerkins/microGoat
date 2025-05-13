@@ -48,7 +48,7 @@ fi
 echo "Moving the binary to \"/usr/local/bin/\". It might request root access."
 sudo mv tmas /usr/local/bin/
 
-# If c1cs is already installed, create a symbolic link to tmas to maintain compatibility.
+# If v1cs is already installed, create a symbolic link to tmas to maintain compatibility.
 if command -v c1cs &> /dev/null
 then
     echo "Creating symbolic link from c1cs to tmas to maintain compatibility. Note: this might be removed in the future."
