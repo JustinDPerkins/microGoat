@@ -54,7 +54,6 @@ jobs:
   Frontend:
     runs-on: ubuntu-latest
     name: Frontend Build
-    needs: Scanner
     steps:
     - uses: actions/checkout@v3
     - name: configure aws credentials
@@ -96,7 +95,6 @@ jobs:
   Backend:
     runs-on: ubuntu-latest
     name: Backend Build
-    needs: Scanner
     steps:
     - uses: actions/checkout@v3
     - name: configure aws credentials
@@ -138,7 +136,6 @@ jobs:
   Terminal:
     runs-on: ubuntu-latest
     name: Terminal Build
-    needs: Scanner
     steps:
     - uses: actions/checkout@v3
     - name: configure aws credentials
@@ -180,7 +177,6 @@ jobs:
   LazyMode:
     runs-on: ubuntu-latest
     name: LazyMode Build
-    needs: Scanner
     steps:
     - uses: actions/checkout@v3
     - name: configure aws credentials
@@ -222,7 +218,6 @@ jobs:
   Orders:
     runs-on: ubuntu-latest
     name: Orders Build
-    needs: Scanner
     steps:
     - uses: actions/checkout@v3
     - name: configure aws credentials
