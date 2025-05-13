@@ -1,10 +1,11 @@
+# build pipeline in Github actions
+
 name: CI/CD Pipeline
 
 on:
   push:
     branches: [ main ]
   workflow_dispatch:
-
 env:
   FRONTEND_CONTAINER_NAME: "frontend"
   BACKEND_CONTAINER_NAME: "backend"
@@ -18,10 +19,56 @@ env:
   AMAAS_URL: "antimalware.us-1.cloudone.trendmicro.com:443"
 
 permissions:
-  id-token: write
-  contents: read
+      id-token: write   # This is required for requesting the JWT
+      contents: read    # This is required for actions/checkout
 
 jobs:
+
+  LinterCFN:
+    name: Linter Templates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Setup Linter cfn-lint
+        uses: scottbrenner/cfn-lint-action@v2.3.5
+      - name: Run Linter
+        run: |
+          shopt -s globstar # enable globbing
+          cfn-lint --version
+          cfn-lint -t ${{ env.CFN_TEMPLATES_FOLDER }}/*template.yaml
+  LinterCode:
+    name: Linter Code
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+  Scanner:
+    runs-on: ubuntu-latest
+    name: Template Scanner
+    needs: [ LinterCFN, LinterCode ]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Template Scanner
+        uses: raphabot/conformity-template-scanner-pipeline@v1.0.3
+        env:
+          cc_apikey: ${{ secrets.C1_API_KEY }}
+          maxExtreme: 10
+          maxVeryHigh: 10
+          maxHigh: 10
+          maxMedium: 10
+          maxLow: 15
+          cc_region: us-west-2
+          templatesDirPath: templates/aws
+          cc_output_results: true
+      - name: 'Upload Scan Result Artifact'
+        uses: actions/upload-artifact@v3
+        with:
+          name: template-scan-result
+          path: results.json
+          retention-days: 30
   Frontend:
     runs-on: ubuntu-latest
     name: Frontend Build
